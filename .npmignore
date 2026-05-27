@@ -1,0 +1,11 @@
+src/
+tests/
+docs/
+.github/
+*.test.ts
+tsconfig.json
+jest.config.ts
+.eslintrc.json
+.prettierrc
+mrx.config.example.yaml
+CONTRIBUTING.md
