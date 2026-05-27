@@ -83,7 +83,7 @@ export async function generate(options: GenerateOptions): Promise<string> {
  */
 export async function stream(options: StreamOptions): Promise<string> {
   const model = resolveModel(options.modelConfig);
-  const result = streamText({
+  const result = await streamText({
     model,
     messages: options.messages,
     system: options.system,

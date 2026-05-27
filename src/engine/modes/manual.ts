@@ -37,19 +37,19 @@ export async function manualRoute(
   ];
 
   let finalResponse = '';
-  if (config.display.stream && onStream) {
+  if (config.display.stream) {
     finalResponse = await stream({
       modelConfig,
       messages,
       system: DEFAULT_SYSTEM,
       onChunk: (chunk) =>
-        onStream({
+        onStream?.({
           type: 'response',
           content: chunk,
           role: effectiveRole,
           model: modelConfig.model,
         }),
-      onFinish: () => onStream({ type: 'done', content: '' }),
+      onFinish: () => onStream?.({ type: 'done', content: '' }),
     });
   } else {
     finalResponse = await generate({
