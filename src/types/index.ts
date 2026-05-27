@@ -1,12 +1,6 @@
 // src/types/index.ts
 
-export type Provider =
-  | 'openai'
-  | 'anthropic'
-  | 'google'
-  | 'ollama'
-  | 'lmstudio'
-  | 'openrouter';
+export type Provider = 'openai' | 'anthropic' | 'google' | 'ollama' | 'lmstudio' | 'openrouter';
 
 export type Role = 'reasoner' | 'executor' | 'tool_caller';
 

@@ -27,7 +27,7 @@ describe('parseManualPrefix', () => {
     expect(result.content).toBe('run this');
   });
 
-  it("returns role: null for messages without prefix", () => {
+  it('returns role: null for messages without prefix', () => {
     const result = parseManualPrefix('no prefix message');
     expect(result.role).toBeNull();
     expect(result.content).toBe('no prefix message');

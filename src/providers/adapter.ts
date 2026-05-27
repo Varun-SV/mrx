@@ -18,7 +18,9 @@ function resolveModel(config: ModelConfig) {
         config.model,
       );
     case 'ollama':
-      return createOllama({ baseURL: config.baseUrl ?? 'http://localhost:11434/api' })(config.model);
+      return createOllama({ baseURL: config.baseUrl ?? 'http://localhost:11434/api' })(
+        config.model,
+      );
     case 'lmstudio':
       // LM Studio exposes an OpenAI-compatible endpoint
       return createOpenAI({

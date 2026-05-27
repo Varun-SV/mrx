@@ -80,7 +80,7 @@ export const fileListTool: ToolDefinition = {
     try {
       const resolved = path.resolve(dirPath);
 
-      function listEntries(dir: string, base: string): string[] {
+      const listEntries = (dir: string, base: string): string[] => {
         const entries = fs.readdirSync(dir, { withFileTypes: true });
         const results: string[] = [];
         for (const entry of entries) {
@@ -91,7 +91,7 @@ export const fileListTool: ToolDefinition = {
           }
         }
         return results;
-      }
+      };
 
       const entries = listEntries(resolved, '');
       return entries.join('\n') || '(empty directory)';

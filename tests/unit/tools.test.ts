@@ -207,7 +207,9 @@ describe('buildToolRegistry', () => {
 
   it('includes 3 file system tools when file_system: true', async () => {
     const tools = buildToolRegistry({ shell: false, file_system: true, web_fetch: false });
-    expect(tools.filter((t) => ['read_file', 'write_file', 'list_directory'].includes(t.name))).toHaveLength(3);
+    expect(
+      tools.filter((t) => ['read_file', 'write_file', 'list_directory'].includes(t.name)),
+    ).toHaveLength(3);
   });
 
   it('includes webFetchTool when web_fetch: true', async () => {

@@ -30,7 +30,8 @@ export const webFetchTool: ToolDefinition = {
       }
 
       const buffer = await response.buffer();
-      const truncated = buffer.length > MAX_RESPONSE_BYTES ? buffer.slice(0, MAX_RESPONSE_BYTES) : buffer;
+      const truncated =
+        buffer.length > MAX_RESPONSE_BYTES ? buffer.slice(0, MAX_RESPONSE_BYTES) : buffer;
       let content = truncated.toString('utf-8');
 
       if (selector) {

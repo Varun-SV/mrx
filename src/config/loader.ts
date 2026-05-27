@@ -34,9 +34,7 @@ export function loadConfig(explicitPath?: string): MrxConfig {
       return {
         ...DEFAULT_CONFIG,
         ...result.data,
-        session_db_path: expandPath(
-          result.data.session_db_path ?? DEFAULT_CONFIG.session_db_path,
-        ),
+        session_db_path: expandPath(result.data.session_db_path ?? DEFAULT_CONFIG.session_db_path),
       };
     }
   }

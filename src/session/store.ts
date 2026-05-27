@@ -69,9 +69,7 @@ export class SessionStore {
     if (!row) return null;
 
     const messageRows = this.db
-      .prepare(
-        'SELECT * FROM messages WHERE session_id = ? ORDER BY timestamp ASC',
-      )
+      .prepare('SELECT * FROM messages WHERE session_id = ? ORDER BY timestamp ASC')
       .all(sessionId) as Array<{
       id: string;
       session_id: string;
@@ -128,9 +126,7 @@ export class SessionStore {
         message.toolResults ? JSON.stringify(message.toolResults) : null,
       );
 
-    this.db
-      .prepare('UPDATE sessions SET updated_at = ? WHERE id = ?')
-      .run(Date.now(), sessionId);
+    this.db.prepare('UPDATE sessions SET updated_at = ? WHERE id = ?').run(Date.now(), sessionId);
   }
 
   /** List all sessions with metadata */

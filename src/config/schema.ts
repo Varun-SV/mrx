@@ -1,6 +1,13 @@
 import { z } from 'zod';
 
-const ProviderSchema = z.enum(['openai', 'anthropic', 'google', 'ollama', 'lmstudio', 'openrouter']);
+const ProviderSchema = z.enum([
+  'openai',
+  'anthropic',
+  'google',
+  'ollama',
+  'lmstudio',
+  'openrouter',
+]);
 
 const ModelConfigSchema = z.object({
   provider: ProviderSchema,

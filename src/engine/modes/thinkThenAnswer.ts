@@ -1,11 +1,6 @@
 import { generate, stream } from '../../providers/adapter.js';
 import { resolveModelForRole } from '../router.js';
-import type {
-  MrxConfig,
-  Message,
-  OrchestrationResult,
-  StreamChunk,
-} from '../../types/index.js';
+import type { MrxConfig, Message, OrchestrationResult, StreamChunk } from '../../types/index.js';
 import type { CoreMessage } from 'ai';
 
 const REASONER_SYSTEM = `You are a deep reasoning engine. When given a user query, you must:

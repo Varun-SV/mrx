@@ -15,9 +15,7 @@ describe('SessionStore', () => {
 
   it('createSession returns a UUID-format string', () => {
     const id = store.createSession('Test Session', 'think_then_answer');
-    expect(id).toMatch(
-      /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/,
-    );
+    expect(id).toMatch(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/);
   });
 
   it('getSession returns null for non-existent session', () => {

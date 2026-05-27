@@ -43,7 +43,12 @@ export async function plannerExecutor(
     system: PLANNER_SYSTEM,
   });
 
-  onStream?.({ type: 'reasoning', content: planText, role: 'reasoner', model: reasonerModel.model });
+  onStream?.({
+    type: 'reasoning',
+    content: planText,
+    role: 'reasoner',
+    model: reasonerModel.model,
+  });
 
   const steps = parsePlan(planText);
   const allToolsInvoked: ToolCall[] = [];
@@ -52,9 +57,7 @@ export async function plannerExecutor(
   // Step 2: Execute each step
   for (let i = 0; i < steps.length; i++) {
     const step = steps[i];
-    const stepContext = stepResults
-      .map((r, idx) => `Step ${idx + 1} result: ${r}`)
-      .join('\n');
+    const stepContext = stepResults.map((r, idx) => `Step ${idx + 1} result: ${r}`).join('\n');
 
     const executorSystem = [
       `Original user query: ${userMessage}`,
@@ -114,7 +117,7 @@ export async function plannerExecutor(
         timestamp: Date.now(),
         model: reasonerModel.model,
       },
-      ...stepResults.map((result, i) => ({
+      ...stepResults.map((result) => ({
         id: crypto.randomUUID(),
         role: 'assistant' as const,
         content: result,

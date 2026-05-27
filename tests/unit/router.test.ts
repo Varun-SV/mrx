@@ -14,13 +14,13 @@ describe('resolveModelForRole', () => {
     expect(model).toBe(DEFAULT_CONFIG.models.executor);
   });
 
-  it("falls back to executor when tool_caller is absent", () => {
+  it('falls back to executor when tool_caller is absent', () => {
     const config: MrxConfig = { ...DEFAULT_CONFIG }; // no tool_caller set
     const model = resolveModelForRole('tool_caller', config);
     expect(model).toBe(config.models.executor);
   });
 
-  it("returns config.models.tool_caller when explicitly set", () => {
+  it('returns config.models.tool_caller when explicitly set', () => {
     const toolCallerConfig = {
       provider: 'openrouter' as const,
       model: 'google/gemini-flash-1.5',
