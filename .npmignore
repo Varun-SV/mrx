@@ -1,0 +1,13 @@
+src/
+tests/
+docs/
+.github/
+coverage/
+*.test.ts
+tsconfig.json
+jest.config.js
+jest.config.ts
+.eslintrc.json
+.prettierrc
+mrx.config.example.yaml
+CONTRIBUTING.md

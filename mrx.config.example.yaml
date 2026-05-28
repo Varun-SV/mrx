@@ -1,0 +1,42 @@
+# mrx configuration file
+# Copy to ./mrx.config.yaml or ~/.mrx/mrx.config.yaml
+
+# Default interaction mode: planner_executor | think_then_answer | manual
+default_mode: think_then_answer
+
+# Persist conversation history to SQLite
+session_memory: true
+session_db_path: ~/.mrx/sessions.db
+
+models:
+  # The reasoning model: handles planning, CoT, and complex thinking
+  reasoner:
+    provider: ollama          # openai | anthropic | google | ollama | lmstudio | openrouter
+    model: qwen3:14b
+    temperature: 0.6
+    maxTokens: 8192
+    # baseUrl: http://localhost:11434  # custom endpoint for ollama/lmstudio
+
+  # The executor model: produces final user-facing output
+  executor:
+    provider: openai
+    model: gpt-4o-mini
+    temperature: 0.7
+    maxTokens: 4096
+    # apiKey: sk-...  # overrides OPENAI_API_KEY env var
+
+  # Optional: dedicated model for tool calling (falls back to executor if absent)
+  tool_caller:
+    provider: openrouter
+    model: google/gemini-flash-1.5
+    temperature: 0.2
+    maxTokens: 2048
+
+tools:
+  shell: true          # Allow shell command execution (ask user for confirmation)
+  file_system: true    # Read/write files
+  web_fetch: true      # Fetch URLs
+
+display:
+  show_reasoning: false   # Show the reasoner's chain-of-thought in TUI
+  stream: true            # Stream tokens as they arrive
