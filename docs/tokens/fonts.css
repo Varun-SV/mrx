@@ -1,0 +1,19 @@
+/* mrx — webfont declarations
+   JetBrains Mono (variable) — terminal/code, the brand's primary voice
+   Space Grotesk (variable) — display / marketing headings */
+
+@font-face {
+  font-family: 'JetBrains Mono';
+  font-style: normal;
+  font-weight: 400 800;
+  font-display: swap;
+  src: url('../assets/fonts/JetBrainsMono-Variable.woff2') format('woff2');
+}
+
+@font-face {
+  font-family: 'Space Grotesk';
+  font-style: normal;
+  font-weight: 400 700;
+  font-display: swap;
+  src: url('../assets/fonts/SpaceGrotesk-Variable.woff2') format('woff2');
+}

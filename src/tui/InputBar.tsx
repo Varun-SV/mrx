@@ -73,9 +73,9 @@ const InputBar: React.FC<InputBarProps> = ({
   return (
     <Box flexDirection="column" borderStyle="single" paddingX={1}>
       <Box>
-        <Text color="cyan">{'> '}</Text>
+        <Text color="#45C8DB">{'> '}</Text>
         <Text>{input}</Text>
-        <Text>{cursor ? '|' : ' '}</Text>
+        <Text color="#45C8DB">{cursor ? '▏' : ' '}</Text>
       </Box>
       <Text dimColor>
         {'[Enter] send  [Ctrl+M] mode  [Ctrl+R] reasoning  [Ctrl+C] quit'}

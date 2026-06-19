@@ -31,12 +31,12 @@ const ChatView: React.FC<ChatViewProps> = ({
       {isLoading && streamingContent && (
         <Box flexDirection="column" marginY={0}>
           <Text>{streamingContent}</Text>
-          <Text dimColor>{'[streaming...]'}</Text>
+          <Text dimColor italic>{'[streaming...]'}</Text>
         </Box>
       )}
 
       {isLoading && !streamingContent && (
-        <Text dimColor>{'thinking...'}</Text>
+        <Text color="#45C8DB" dimColor italic>{'thinking...'}</Text>
       )}
     </Box>
   );

@@ -1,0 +1,77 @@
+/* mrx — COLOR TOKENS
+   A refined terminal palette. Cool charcoal canvas, ANSI-derived role accents.
+   The four role colors (reasoner/executor/tool_caller/user) are the heart of
+   the system — they map 1:1 to how the CLI color-codes model output. */
+
+:root {
+  /* ── Canvas & surfaces (dark, terminal-native) ───────────────── */
+  --base-bg:          #0B0E12;  /* deepest — the terminal void */
+  --base-surface:     #12161C;  /* panels, status bar, input bar */
+  --base-surface-2:   #181D25;  /* raised cards, hovered rows */
+  --base-overlay:     #1F252F;  /* popovers, tooltips, selection */
+
+  /* ── Borders / dividers (box-drawing lines) ──────────────────── */
+  --base-line:        #232A34;  /* default 1px rule */
+  --base-line-strong: #313A47;  /* focused / active box border */
+  --base-line-faint:  #1A1F27;  /* hairline inside panels */
+
+  /* ── Foreground text ─────────────────────────────────────────── */
+  --base-fg:          #E8ECF2;  /* bright — primary text */
+  --base-fg-muted:    #9AA4B2;  /* dim — labels, secondary */
+  --base-fg-faint:    #5E6675;  /* dimmer — hints, metadata, [keys] */
+  --base-fg-ghost:    #3A424E;  /* placeholders, disabled */
+
+  /* ── ROLE COLORS — the orchestration palette ─────────────────── */
+  /* reasoner = cyan (thinks) */
+  --role-reasoner:        #45C8DB;
+  --role-reasoner-dim:    #2C7E8B;
+  --role-reasoner-bg:     #0E2A30;
+  /* executor = green (produces the answer) */
+  --role-executor:        #5BD68A;
+  --role-executor-dim:    #348257;
+  --role-executor-bg:     #0E2A1C;
+  /* tool_caller = amber (touches the world) */
+  --role-tool:            #E5B567;
+  --role-tool-dim:        #8A6C34;
+  --role-tool-bg:         #2A2210;
+  /* user = blue (the human) */
+  --role-user:            #6BA5F5;
+  --role-user-dim:        #3C5E8E;
+  --role-user-bg:         #11203A;
+
+  /* ── Semantic status ─────────────────────────────────────────── */
+  --status-error:     #F0757E;
+  --status-error-bg:  #2E1316;
+  --status-warn:      #E5B567;
+  --status-success:   #5BD68A;
+  --status-info:      #45C8DB;
+
+  /* ── Brand ───────────────────────────────────────────────────── */
+  /* mrx's signature is the reasoner cyan — the "thinking core" */
+  --brand:            #45C8DB;
+  --brand-strong:     #6FE0F0;
+  --brand-bg:         #0E2A30;
+
+  /* ── Semantic aliases (use these in components) ──────────────── */
+  --bg-canvas:        var(--base-bg);
+  --bg-panel:         var(--base-surface);
+  --bg-raised:        var(--base-surface-2);
+  --bg-overlay:       var(--base-overlay);
+
+  --surface-card:     var(--base-surface);
+  --surface-hover:    var(--base-surface-2);
+
+  --border-default:   var(--base-line);
+  --border-strong:    var(--base-line-strong);
+  --border-hair:      var(--base-line-faint);
+
+  --text-bright:      var(--base-fg);
+  --text-body:        var(--base-fg);
+  --text-muted:       var(--base-fg-muted);
+  --text-faint:       var(--base-fg-faint);
+  --text-ghost:       var(--base-fg-ghost);
+
+  --accent:           var(--brand);
+  --accent-bright:    var(--brand-strong);
+  --focus-ring:       var(--brand);
+}

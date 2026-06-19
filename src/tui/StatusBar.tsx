@@ -36,17 +36,19 @@ const StatusBar: React.FC<StatusBarProps> = ({ mode, config, isLoading }) => {
       <Text dimColor> │ </Text>
       <Text dimColor>{MODE_LABELS[mode]}</Text>
       <Text dimColor> │ </Text>
-      <Text color="cyan" dimColor>
-        reasoner: {reasoner.provider}/{reasoner.model}
+      <Text dimColor color="#45C8DB">{'reasoner: '}</Text>
+      <Text color="#45C8DB">
+        {reasoner.provider}/{reasoner.model}
       </Text>
       <Text dimColor> │ </Text>
-      <Text color="green" dimColor>
-        executor: {executor.provider}/{executor.model}
+      <Text dimColor color="#5BD68A">{'executor: '}</Text>
+      <Text color="#5BD68A">
+        {executor.provider}/{executor.model}
       </Text>
       {isLoading && (
         <>
           <Text dimColor> │ </Text>
-          <Text color="yellow">{SPINNER_FRAMES[spinnerIdx]}</Text>
+          <Text color="#E5B567">{SPINNER_FRAMES[spinnerIdx]}</Text>
         </>
       )}
     </Box>

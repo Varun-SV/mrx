@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>mrx — interactive demo</title>
+<link rel="stylesheet" href="./styles.css" />
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { height: 100%; }
+  body {
+    background:
+      radial-gradient(900px 500px at 50% -10%, rgba(69,200,219,0.06), transparent 70%),
+      var(--bg-canvas);
+    font-family: var(--font-mono);
+    color: var(--text-body);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 28px;
+    min-height: 100vh;
+  }
+  #root { width: 100%; max-width: 940px; }
+  .ex-chip:hover { border-color: var(--border-strong) !important; color: var(--text-bright) !important; }
+</style>
+</head>
+<body>
+  <div id="root"></div>
+  <script src="https://unpkg.com/react@18.3.1/umd/react.development.js" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" crossorigin="anonymous"></script>
+  <script src="./_ds_bundle.js"></script>
+  <script type="text/babel">
+const { useState, useRef, useEffect, useCallback } = React;
+const NS = window.MrxDesignSystem_1d8204;
+const { StatusBar, MessageBubble, Prompt, Button, KeyHint, RoleTag, Spinner, Badge } = NS;
+
+const MODES = ['think_then_answer', 'planner_executor', 'manual'];
+const MODE_LABELS = {
+  think_then_answer: 'think-then-answer',
+  planner_executor: 'planner-executor',
+  manual: 'manual',
+};
+
+const CANNED = [
+  {
+    match: /recursion/i,
+    reasoning: 'recursion = a function defined in terms of itself; need a base case to terminate plus a recursive case that shrinks the input. best explained with a tiny example, not theory.',
+    answer: 'Recursion is when a function calls itself to solve a smaller piece of the\nsame problem. Two parts:\n\n  1. base case   — when to stop (e.g. n === 0)\n  2. recursive   — call itself on a smaller input\n\n  function factorial(n) {\n    if (n === 0) return 1;        // base\n    return n * factorial(n - 1);  // recursive\n  }\n\nEach call waits on the next until the base case unwinds the stack.',
+  },
+  {
+    match: /rest|api|todo/i,
+    reasoning: 'user wants a REST design for todos. cover the resource, the 5 CRUD routes, sensible status codes. keep it terse — they can ask for auth/pagination next.',
+    answer: 'A todo resource needs five routes:\n\n  GET    /todos        → 200  list\n  POST   /todos        → 201  create\n  GET    /todos/:id    → 200 | 404\n  PATCH  /todos/:id    → 200 | 404  partial update\n  DELETE /todos/:id    → 204 | 404\n\nReturn the created object on POST, an empty body on DELETE. Add\n?status=open&limit=20 for filtering + pagination when you need it.',
+    tool: 'web_fetch https://restfulapi.net → 1 result',
+  },
+  {
+    match: /sql|nosql|database/i,
+    reasoning: 'classic trade-off question. structure: consistency + relations favor SQL; scale + flexible schema favor NoSQL. give the heuristic, not a wall of text.',
+    answer: 'Rule of thumb:\n\n  SQL    → relational data, transactions, strong consistency,\n           reporting/joins. (Postgres is the safe default.)\n  NoSQL  → flexible/evolving schema, massive horizontal scale,\n           document or key-value access patterns.\n\nFor a social network: SQL for the core graph + accounts; reach for a\ndocument/cache store for feeds and hot reads.',
+  },
+];
+
+const FALLBACK = {
+  reasoning: 'parse the request, decide the shortest correct response, hand the conclusion to the executor to phrase.',
+  answer: 'Here\'s a concise take. mrx routes this through the reasoner first, then\nthe executor writes the final answer you\'re reading now — two models,\none turn. Try asking about recursion, a REST API, or SQL vs NoSQL.',
+};
+
+function pickResponse(text) {
+  const stripped = text.replace(/^@\w+\s*/, '');
+  return CANNED.find((c) => c.match.test(stripped)) || FALLBACK;
+}
+
+const EXAMPLES = [
+  'explain recursion',
+  'design a REST API for a todo app',
+  'trade-offs: SQL vs NoSQL?',
+];
+
+let idSeq = 0;
+const uid = () => `m${idSeq++}`;
+
+function Banner() {
+  return (
+    <div style={{ padding: '6px 2px 14px', borderBottom: '1px solid var(--border-hair)', marginBottom: 14 }}>
+      <pre style={{
+        margin: 0, color: 'var(--brand)', fontSize: 13, lineHeight: 1.15,
+        fontFamily: 'var(--font-mono)', fontWeight: 700,
+      }}>{` _ __ ___  _ __ __  __ \n| '_ \` _ \\| '__|\\ \\/ / \n| | | | | | |    >  <  \n|_| |_| |_|_|   /_/\\_\\ `}</pre>
+      <div style={{ marginTop: 10, color: 'var(--text-muted)', fontSize: 'var(--text-sm)' }}>
+        Multi-role model orchestration. <span style={{ color: 'var(--text-faint)' }}>No config required — defaults to Ollama. Make sure </span>
+        <span style={{ color: 'var(--role-reasoner)' }}>ollama</span>
+        <span style={{ color: 'var(--text-faint)' }}> is running locally.</span>
+      </div>
+      <div style={{ display: 'flex', gap: 8, marginTop: 14, flexWrap: 'wrap' }}>
+        {EXAMPLES.map((ex) => (
+          <span key={ex} data-ex={ex} className="ex-chip" style={{
+            cursor: 'pointer', padding: '5px 10px', fontSize: 'var(--text-xs)',
+            color: 'var(--text-muted)', border: '1px solid var(--border-default)',
+            borderRadius: 'var(--radius-sm)', background: 'var(--bg-panel)',
+            transition: 'border-color var(--dur-fast), color var(--dur-fast)',
+          }}>
+            <span style={{ color: 'var(--brand)' }}>&gt;</span> {ex}
+          </span>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function ChatApp() {
+  const [messages, setMessages] = useState([]);
+  const [mode, setMode] = useState('think_then_answer');
+  const [showReasoning, setShowReasoning] = useState(true);
+  const [input, setInput] = useState('');
+  const [busy, setBusy] = useState(false);
+  const [streaming, setStreaming] = useState(null);
+  const scrollRef = useRef(null);
+  const timers = useRef([]);
+
+  useEffect(() => () => timers.current.forEach(clearTimeout), []);
+  useEffect(() => {
+    if (scrollRef.current) scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+  }, [messages, streaming, busy]);
+
+  const after = (ms, fn) => { const t = setTimeout(fn, ms); timers.current.push(t); };
+
+  const send = useCallback((raw) => {
+    const text = raw.trim();
+    if (!text || busy) return;
+    setInput('');
+    setBusy(true);
+
+    const manualPrefix = mode === 'manual' ? (text.match(/^@(\w+)/)?.[1] || 'executor') : null;
+    setMessages((m) => [...m, { id: uid(), role: 'user', content: text }]);
+
+    const resp = pickResponse(text);
+
+    if (manualPrefix === 'reasoner') {
+      after(700, () => {
+        setMessages((m) => [...m, { id: uid(), role: 'reasoner', content: resp.reasoning }]);
+        setBusy(false);
+      });
+      return;
+    }
+
+    after(650, () => {
+      if (showReasoning && mode !== 'manual') {
+        setMessages((m) => [...m, { id: uid(), role: 'reasoner', content: resp.reasoning }]);
+      }
+      const toolDelay = resp.tool ? 600 : 0;
+      if (resp.tool) {
+        after(450, () => setMessages((m) => [...m, { id: uid(), role: 'tool_caller', content: resp.tool }]));
+      }
+      after(500 + toolDelay, () => {
+        const full = resp.answer;
+        let i = 0;
+        setStreaming({ text: '' });
+        const step = () => {
+          i += Math.max(2, Math.round(full.length / 90));
+          const slice = full.slice(0, i);
+          setStreaming({ text: slice });
+          if (i < full.length) { after(28, step); }
+          else {
+            setStreaming(null);
+            setMessages((m) => [...m, { id: uid(), role: 'executor', content: full }]);
+            setBusy(false);
+          }
+        };
+        step();
+      });
+    });
+  }, [busy, mode, showReasoning]);
+
+  useEffect(() => {
+    const h = (e) => {
+      const chip = e.target.closest('.ex-chip');
+      if (chip && !busy) send(chip.getAttribute('data-ex'));
+    };
+    document.addEventListener('click', h);
+    return () => document.removeEventListener('click', h);
+  }, [send, busy]);
+
+  useEffect(() => {
+    const h = (e) => {
+      if (e.ctrlKey && (e.key === 'm' || e.key === 'M')) { e.preventDefault(); cycleMode(); }
+      if (e.ctrlKey && (e.key === 'r' || e.key === 'R')) { e.preventDefault(); setShowReasoning((s) => !s); }
+    };
+    window.addEventListener('keydown', h);
+    return () => window.removeEventListener('keydown', h);
+  });
+
+  const cycleMode = () => setMode((cur) => MODES[(MODES.indexOf(cur) + 1) % MODES.length]);
+
+  const visible = messages.filter((m) => !(m.role === 'reasoner' && !showReasoning));
+
+  return (
+    <div style={{
+      border: '1px solid var(--border-strong)', borderRadius: 'var(--radius-lg)',
+      overflow: 'hidden', background: 'var(--bg-canvas)',
+      boxShadow: 'var(--glow-brand), var(--shadow-lg)',
+      display: 'flex', flexDirection: 'column', height: 660,
+    }}>
+      {/* window chrome */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '9px 14px', background: 'var(--bg-panel)', borderBottom: '1px solid var(--border-default)' }}>
+        <span style={{ display: 'inline-flex', gap: 7 }}>
+          <i style={{ width: 11, height: 11, borderRadius: '50%', background: '#F0757E', display: 'inline-block' }} />
+          <i style={{ width: 11, height: 11, borderRadius: '50%', background: '#E5B567', display: 'inline-block' }} />
+          <i style={{ width: 11, height: 11, borderRadius: '50%', background: '#5BD68A', display: 'inline-block' }} />
+        </span>
+        <span style={{ margin: '0 auto', fontSize: 'var(--text-2xs)', letterSpacing: 'var(--tracking-wide)', color: 'var(--text-faint)' }}>mrx — chat</span>
+        <a href="./index.html" style={{ fontSize: 'var(--text-2xs)', color: 'var(--text-ghost)' }}>← back</a>
+      </div>
+
+      {/* status bar */}
+      <div style={{ padding: '0 14px', paddingTop: 12 }}>
+        <StatusBar mode={mode} reasoner="ollama/qwen3:14b" executor="openai/gpt-4o-mini" loading={busy} />
+      </div>
+
+      {/* transcript */}
+      <div ref={scrollRef} style={{ flex: 1, overflowY: 'auto', padding: '16px 16px 10px', display: 'flex', flexDirection: 'column', gap: 14 }}>
+        {messages.length === 0 && <Banner />}
+        {visible.map((m) => (
+          <MessageBubble key={m.id} role={m.role}>{m.content}</MessageBubble>
+        ))}
+        {streaming && <MessageBubble role="executor" streaming>{streaming.text}</MessageBubble>}
+        {busy && !streaming && (
+          <Spinner label={mode === 'planner_executor' ? 'planning…' : 'thinking…'} color="var(--role-reasoner)" />
+        )}
+      </div>
+
+      {/* input bar */}
+      <div style={{ borderTop: '1px solid var(--border-default)', background: 'var(--bg-panel)', padding: '12px 16px' }}>
+        <form onSubmit={(e) => { e.preventDefault(); send(input); }} style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <span style={{ color: 'var(--brand)', fontWeight: 600 }}>&gt;</span>
+          <input
+            autoFocus value={input} onChange={(e) => setInput(e.target.value)}
+            placeholder={mode === 'manual' ? 'try @reasoner … / @executor …' : 'ask anything…'}
+            disabled={busy}
+            style={{ flex: 1, background: 'transparent', border: 'none', outline: 'none', color: 'var(--text-bright)', fontFamily: 'var(--font-mono)', fontSize: 'var(--text-sm)', caretColor: 'var(--brand)' }}
+          />
+        </form>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 18, marginTop: 10, flexWrap: 'wrap' }}>
+          <KeyHint keys="Enter" label="send" />
+          <span onClick={cycleMode} style={{ cursor: 'pointer' }}><KeyHint keys="Ctrl+M" label="mode" /></span>
+          <span onClick={() => setShowReasoning((s) => !s)} style={{ cursor: 'pointer' }}>
+            <KeyHint keys="Ctrl+R" label={`reasoning ${showReasoning ? 'on' : 'off'}`} />
+          </span>
+          <span style={{ marginLeft: 'auto', display: 'flex', gap: 8, alignItems: 'center' }}>
+            <span style={{ fontSize: 'var(--text-2xs)', color: 'var(--text-ghost)' }}>mode</span>
+            <Badge tone="brand" dot>{MODE_LABELS[mode]}</Badge>
+          </span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<ChatApp />);
+  </script>
+</body>
+</html>
