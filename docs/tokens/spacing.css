@@ -1,0 +1,59 @@
+/* mrx — SPACING, RADII, SHADOWS, MOTION
+   The terminal is a grid of character cells; spacing echoes that rhythm.
+   Corners are nearly square (terminals are boxy). Shadows are minimal —
+   depth comes from surface lightness and box-drawing borders, not blur. */
+
+:root {
+  /* ── Spacing scale (4px base grid) ──────────────────────────── */
+  --space-0:   0;
+  --space-1:   0.25rem;   /* 4px */
+  --space-2:   0.5rem;    /* 8px */
+  --space-3:   0.75rem;   /* 12px */
+  --space-4:   1rem;      /* 16px */
+  --space-5:   1.5rem;    /* 24px */
+  --space-6:   2rem;      /* 32px */
+  --space-7:   3rem;      /* 48px */
+  --space-8:   4rem;      /* 64px */
+  --space-9:   6rem;      /* 96px */
+  --space-10:  8rem;      /* 128px */
+
+  /* ── Radii — terminals are boxy; keep corners tight ─────────── */
+  --radius-none: 0;
+  --radius-xs:   2px;   /* inputs, chips */
+  --radius-sm:   4px;   /* buttons, badges */
+  --radius-md:   6px;   /* cards, panels */
+  --radius-lg:   10px;  /* modals, large surfaces */
+  --radius-pill: 999px;
+
+  /* ── Border widths ──────────────────────────────────────────── */
+  --border-1: 1px;
+  --border-2: 2px;
+
+  /* ── Shadows — restrained; mostly for floating overlays ─────── */
+  --shadow-none: none;
+  --shadow-sm:  0 1px 2px rgba(0, 0, 0, 0.4);
+  --shadow-md:  0 4px 14px rgba(0, 0, 0, 0.45);
+  --shadow-lg:  0 16px 40px rgba(0, 0, 0, 0.55);
+  /* signature glow — used sparingly on the focused box / brand accents */
+  --glow-brand:    0 0 0 1px var(--brand), 0 0 18px -2px rgba(69, 200, 219, 0.35);
+  --glow-reasoner: 0 0 16px -3px rgba(69, 200, 219, 0.45);
+  --glow-executor: 0 0 16px -3px rgba(91, 214, 138, 0.45);
+
+  /* ── Focus ring ─────────────────────────────────────────────── */
+  --ring-width: 2px;
+  --ring: 0 0 0 var(--ring-width) var(--focus-ring);
+
+  /* ── Motion — terminals are instant; transitions are crisp ──── */
+  --ease-out:   cubic-bezier(0.16, 1, 0.3, 1);   /* @kind other */
+  --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1); /* @kind other */
+  --dur-fast:   90ms;   /* @kind other */
+  --dur-base:   160ms;  /* @kind other */
+  --dur-slow:   280ms;  /* @kind other */
+  /* the braille cursor / spinner cadence from the TUI */
+  --blink: 530ms;       /* @kind other */
+
+  /* ── Layout ─────────────────────────────────────────────────── */
+  --container-narrow: 720px;
+  --container:        1080px;
+  --container-wide:   1320px;
+}

@@ -17,11 +17,11 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({ message, showReasoning })
       <Box justifyContent="flex-end" marginY={0}>
         <Box
           borderStyle="round"
-          borderColor="blue"
+          borderColor="#6BA5F5"
           paddingX={1}
           flexDirection="column"
         >
-          <Text color="blue">{message.content}</Text>
+          <Text color="#6BA5F5">{message.content}</Text>
         </Box>
       </Box>
     );
@@ -31,12 +31,10 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({ message, showReasoning })
     return (
       <Box flexDirection="column" marginY={0}>
         <Text dimColor italic>
-          {'[reasoning] '}
+          <Text color="#45C8DB">{'[reasoning] '}</Text>
           {message.content}
         </Text>
-        {message.model && (
-          <Text dimColor>{'  [reasoner]'}</Text>
-        )}
+        <Text color="#45C8DB" dimColor>{'  [reasoner]'}</Text>
       </Box>
     );
   }
@@ -44,27 +42,41 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({ message, showReasoning })
   if (message.role === 'tool') {
     return (
       <Box flexDirection="column" marginY={0}>
-        <Text color="yellow" dimColor>
-          {'[tool] '}
+        <Text dimColor>
+          <Text color="#E5B567">{'[tool] '}</Text>
           {message.content}
         </Text>
+        <Text color="#E5B567" dimColor>{'  [tool_caller]'}</Text>
       </Box>
     );
   }
 
-  // Regular assistant message
-  const label = message.modelRole === 'executor'
-    ? '[executor]'
-    : message.modelRole === 'reasoner'
-    ? '[reasoner]'
-    : message.modelRole === 'tool_caller'
-    ? '[tool_caller]'
-    : '[assistant]';
+  // Regular assistant message — label color keyed to role
+  if (message.modelRole === 'reasoner') {
+    return (
+      <Box flexDirection="column" marginY={0}>
+        <Text>{message.content}</Text>
+        <Text color="#45C8DB" dimColor>{'[reasoner]'}</Text>
+      </Box>
+    );
+  }
 
+  if (message.modelRole === 'tool_caller') {
+    return (
+      <Box flexDirection="column" marginY={0}>
+        <Text>{message.content}</Text>
+        <Text color="#E5B567" dimColor>{'[tool_caller]'}</Text>
+      </Box>
+    );
+  }
+
+  // executor (default)
   return (
     <Box flexDirection="column" marginY={0}>
       <Text>{message.content}</Text>
-      <Text dimColor>{label}</Text>
+      <Text color="#5BD68A" dimColor>
+        {message.modelRole === 'executor' ? '[executor]' : '[assistant]'}
+      </Text>
     </Box>
   );
 };
