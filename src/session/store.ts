@@ -29,6 +29,16 @@ CREATE TABLE IF NOT EXISTS messages (
 CREATE INDEX IF NOT EXISTS idx_messages_session ON messages(session_id, timestamp);
 `;
 
+function safeJsonParse<T>(raw: string | null): T | undefined {
+  if (!raw) return undefined;
+  try {
+    return JSON.parse(raw) as T;
+  } catch {
+    console.warn('[mrx] Skipping malformed JSON in session data.');
+    return undefined;
+  }
+}
+
 export class SessionStore {
   private db: Database.Database;
 
@@ -39,6 +49,9 @@ export class SessionStore {
     this.db = new Database(dbPath);
     this.db.pragma('journal_mode = WAL');
     this.db.pragma('foreign_keys = ON');
+    this.db.pragma('cache_size = -64000');
+    this.db.pragma('synchronous = NORMAL');
+    this.db.pragma('temp_store = MEMORY');
     this.migrate();
   }
 
@@ -91,8 +104,8 @@ export class SessionStore {
       modelRole: m.model_role as Message['modelRole'],
       isReasoning: m.is_reasoning === 1,
       timestamp: m.timestamp,
-      toolCalls: m.tool_calls ? JSON.parse(m.tool_calls) : undefined,
-      toolResults: m.tool_results ? JSON.parse(m.tool_results) : undefined,
+      toolCalls: safeJsonParse(m.tool_calls),
+      toolResults: safeJsonParse(m.tool_results),
     }));
 
     return {

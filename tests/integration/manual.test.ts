@@ -8,6 +8,8 @@ import { generate, stream } from '../../src/providers/adapter.js';
 const mockGenerate = generate as jest.MockedFunction<typeof generate>;
 const mockStream = stream as jest.MockedFunction<typeof stream>;
 
+const ok = (text: string) => ({ text, toolCalls: [], toolResults: [] });
+
 describe('parseManualPrefix', () => {
   it("parses '@reasoner analyze this' correctly", () => {
     const result = parseManualPrefix('@reasoner analyze this');
@@ -38,6 +40,29 @@ describe('parseManualPrefix', () => {
     expect(result.role).toBe('reasoner');
     expect(result.content).toBe('think about it');
   });
+
+  it('returns null role and warning for @role with no content', () => {
+    const result = parseManualPrefix('@reasoner');
+    expect(result.role).toBeNull();
+    expect(result.warning).toMatch(/requires a message/);
+  });
+
+  it('returns null role and warning for unknown @role', () => {
+    const result = parseManualPrefix('@supermodel do something');
+    expect(result.role).toBeNull();
+    expect(result.warning).toMatch(/Unknown role/);
+  });
+
+  it('returns null role and warning for double @@ prefix', () => {
+    const result = parseManualPrefix('@@reasoner hello');
+    expect(result.role).toBeNull();
+    expect(result.warning).toMatch(/Invalid prefix/);
+  });
+
+  it('ignores only the first @role when message has no space after it', () => {
+    const result = parseManualPrefix('@reasoner');
+    expect(result.role).toBeNull();
+  });
 });
 
 describe('manualRoute', () => {
@@ -48,7 +73,7 @@ describe('manualRoute', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
-    mockGenerate.mockResolvedValue('Mock response.');
+    mockGenerate.mockResolvedValue(ok('Mock response.'));
   });
 
   it('routes @reasoner prefix to the reasoner model config', async () => {
@@ -72,7 +97,7 @@ describe('manualRoute', () => {
   });
 
   it('returns the response from generate in the finalResponse', async () => {
-    mockGenerate.mockResolvedValueOnce('Generated text here.');
+    mockGenerate.mockResolvedValueOnce(ok('Generated text here.'));
     const result = await manualRoute('hello', [], config);
     expect(result.finalResponse).toBe('Generated text here.');
   });
@@ -91,5 +116,15 @@ describe('manualRoute', () => {
     const result = await manualRoute('stream me', [], streamConfig);
     expect(mockStream).toHaveBeenCalledTimes(1);
     expect(result.finalResponse).toBe('Stream chunk.');
+  });
+
+  it('defaults to executor when @unknown_role is used', async () => {
+    const result = await manualRoute('@unknown_role do something', [], config);
+    expect(result.messagesProduced[0].modelRole).toBe('executor');
+  });
+
+  it('wraps provider errors with a classified message', async () => {
+    mockGenerate.mockRejectedValueOnce(new Error('429 Too Many Requests'));
+    await expect(manualRoute('hello', [], config)).rejects.toThrow(/Rate limited/);
   });
 });

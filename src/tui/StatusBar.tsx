@@ -14,6 +14,12 @@ const MODE_LABELS: Record<InteractionMode, string> = {
   manual: 'manual',
 };
 
+const MODE_DESCRIPTIONS: Record<InteractionMode, string> = {
+  think_then_answer: 'reasoner thinks, executor answers',
+  planner_executor: 'reasoner plans steps, executor runs each',
+  manual: 'route with @reasoner / @executor / @tool_caller',
+};
+
 const SPINNER_FRAMES = ['⠋', '⠙', '⠹', '⠸', '⠼', '⠴', '⠦', '⠧', '⠇', '⠏'];
 
 const StatusBar: React.FC<StatusBarProps> = ({ mode, config, isLoading }) => {
@@ -31,26 +37,29 @@ const StatusBar: React.FC<StatusBarProps> = ({ mode, config, isLoading }) => {
   const executor = config.models.executor;
 
   return (
-    <Box borderStyle="single" paddingX={1}>
-      <Text bold>mrx</Text>
-      <Text dimColor> │ </Text>
-      <Text dimColor>{MODE_LABELS[mode]}</Text>
-      <Text dimColor> │ </Text>
-      <Text dimColor color="#45C8DB">{'reasoner: '}</Text>
-      <Text color="#45C8DB">
-        {reasoner.provider}/{reasoner.model}
-      </Text>
-      <Text dimColor> │ </Text>
-      <Text dimColor color="#5BD68A">{'executor: '}</Text>
-      <Text color="#5BD68A">
-        {executor.provider}/{executor.model}
-      </Text>
-      {isLoading && (
-        <>
-          <Text dimColor> │ </Text>
-          <Text color="#E5B567">{SPINNER_FRAMES[spinnerIdx]}</Text>
-        </>
-      )}
+    <Box borderStyle="single" paddingX={1} flexDirection="column">
+      <Box>
+        <Text bold>mrx</Text>
+        <Text dimColor> │ </Text>
+        <Text color="#45C8DB">{MODE_LABELS[mode]}</Text>
+        <Text dimColor> │ </Text>
+        <Text dimColor color="#45C8DB">{'reasoner: '}</Text>
+        <Text color="#45C8DB">
+          {reasoner.provider}/{reasoner.model}
+        </Text>
+        <Text dimColor> │ </Text>
+        <Text dimColor color="#5BD68A">{'executor: '}</Text>
+        <Text color="#5BD68A">
+          {executor.provider}/{executor.model}
+        </Text>
+        {isLoading && (
+          <>
+            <Text dimColor> │ </Text>
+            <Text color="#E5B567">{SPINNER_FRAMES[spinnerIdx]}</Text>
+          </>
+        )}
+      </Box>
+      <Text dimColor italic>{MODE_DESCRIPTIONS[mode]}</Text>
     </Box>
   );
 };

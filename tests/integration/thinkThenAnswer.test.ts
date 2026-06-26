@@ -3,11 +3,12 @@ import { thinkThenAnswer } from '../../src/engine/modes/thinkThenAnswer.js';
 import { DEFAULT_CONFIG } from '../../src/config/defaults.js';
 import type { MrxConfig, StreamChunk } from '../../src/types/index.js';
 
-// The provider adapter is automatically mocked via moduleNameMapper in jest.config.ts
 import { generate, stream } from '../../src/providers/adapter.js';
 
 const mockGenerate = generate as jest.MockedFunction<typeof generate>;
 const mockStream = stream as jest.MockedFunction<typeof stream>;
+
+const ok = (text: string) => ({ text, toolCalls: [], toolResults: [] });
 
 describe('thinkThenAnswer', () => {
   const config: MrxConfig = {
@@ -21,8 +22,8 @@ describe('thinkThenAnswer', () => {
 
   it('produces OrchestrationResult with finalResponse and reasoning', async () => {
     mockGenerate
-      .mockResolvedValueOnce('<thinking>Step 1: do X</thinking>\nConclusion: Y')
-      .mockResolvedValueOnce('Final answer based on reasoning.');
+      .mockResolvedValueOnce(ok('<thinking>Step 1: do X</thinking>\nConclusion: Y'))
+      .mockResolvedValueOnce(ok('Final answer based on reasoning.'));
 
     const result = await thinkThenAnswer('What is X?', [], config);
 
@@ -32,10 +33,8 @@ describe('thinkThenAnswer', () => {
 
   it('extracts reasoning from <thinking> tags', async () => {
     mockGenerate
-      .mockResolvedValueOnce(
-        '<thinking>Deep thought about the problem</thinking>\nHere is my conclusion.',
-      )
-      .mockResolvedValueOnce('The answer is 42.');
+      .mockResolvedValueOnce(ok('<thinking>Deep thought about the problem</thinking>\nHere is my conclusion.'))
+      .mockResolvedValueOnce(ok('The answer is 42.'));
 
     const result = await thinkThenAnswer('What is the answer?', [], config);
 
@@ -45,7 +44,7 @@ describe('thinkThenAnswer', () => {
 
   it('falls back to full response if no <thinking> tags present', async () => {
     const rawResponse = 'Just a direct response without thinking tags.';
-    mockGenerate.mockResolvedValueOnce(rawResponse).mockResolvedValueOnce('Executor response.');
+    mockGenerate.mockResolvedValueOnce(ok(rawResponse)).mockResolvedValueOnce(ok('Executor response.'));
 
     const result = await thinkThenAnswer('Simple question', [], config);
 
@@ -54,8 +53,8 @@ describe('thinkThenAnswer', () => {
 
   it('produces two messages: reasoning and response', async () => {
     mockGenerate
-      .mockResolvedValueOnce('<thinking>Think</thinking>\nConclusion.')
-      .mockResolvedValueOnce('Final response.');
+      .mockResolvedValueOnce(ok('<thinking>Think</thinking>\nConclusion.'))
+      .mockResolvedValueOnce(ok('Final response.'));
 
     const result = await thinkThenAnswer('Test?', [], config);
 
@@ -72,7 +71,7 @@ describe('thinkThenAnswer', () => {
       display: { show_reasoning: false, stream: true },
     };
 
-    mockGenerate.mockResolvedValueOnce('<thinking>Think</thinking>\nConclusion.');
+    mockGenerate.mockResolvedValueOnce(ok('<thinking>Think</thinking>\nConclusion.'));
     mockStream.mockImplementationOnce(async (opts) => {
       opts.onChunk('Streamed ');
       opts.onChunk('answer.');
@@ -91,8 +90,40 @@ describe('thinkThenAnswer', () => {
   });
 
   it('includes no toolsInvoked', async () => {
-    mockGenerate.mockResolvedValue('response');
+    mockGenerate.mockResolvedValue(ok('response'));
     const result = await thinkThenAnswer('Test?', [], config);
     expect(result.toolsInvoked).toEqual([]);
+  });
+
+  it('handles empty streaming chunks without error', async () => {
+    const streamingConfig: MrxConfig = {
+      ...DEFAULT_CONFIG,
+      display: { show_reasoning: false, stream: true },
+    };
+
+    mockGenerate.mockResolvedValueOnce(ok('<thinking>T</thinking>\nC.'));
+    mockStream.mockImplementationOnce(async (opts) => {
+      opts.onChunk('');
+      opts.onChunk('');
+      opts.onChunk('hello');
+      opts.onChunk('');
+      opts.onFinish?.('hello');
+      return 'hello';
+    });
+
+    const result = await thinkThenAnswer('Test?', [], streamingConfig, () => {});
+    expect(result.finalResponse).toBe('hello');
+  });
+
+  it('wraps reasoner failures with a classified error message', async () => {
+    mockGenerate.mockRejectedValueOnce(new Error('ECONNREFUSED connect to ollama'));
+    await expect(thinkThenAnswer('test', [], config)).rejects.toThrow(/\[reasoner\].*Network error/);
+  });
+
+  it('wraps executor failures with a classified error message', async () => {
+    mockGenerate
+      .mockResolvedValueOnce(ok('<thinking>T</thinking>\nC.'))
+      .mockRejectedValueOnce(new Error('429 rate limit exceeded'));
+    await expect(thinkThenAnswer('test', [], config)).rejects.toThrow(/Rate limited/);
   });
 });

@@ -1,6 +1,12 @@
 import { execa } from 'execa';
 import type { ToolDefinition } from '../types/index.js';
 
+function errorMessage(error: unknown): string {
+  if (error instanceof Error) return error.message;
+  if (typeof error === 'string') return error;
+  return String(error);
+}
+
 export const shellTool: ToolDefinition = {
   name: 'run_shell',
   description:
@@ -18,11 +24,7 @@ export const shellTool: ToolDefinition = {
     required: ['command'],
   },
   async execute(args) {
-    const {
-      command,
-      cwd,
-      timeout = 30000,
-    } = args as {
+    const { command, cwd, timeout = 30000 } = args as {
       command: string;
       cwd?: string;
       timeout?: number;
@@ -35,8 +37,9 @@ export const shellTool: ToolDefinition = {
       });
       return result.all ?? result.stdout ?? '';
     } catch (error: unknown) {
-      const err = error as { all?: string; message?: string };
-      return `ERROR: ${err.all ?? err.message ?? String(error)}`;
+      const combinedOutput =
+        (error as { all?: string }).all ?? (error as { stdout?: string }).stdout ?? '';
+      return `ERROR: ${combinedOutput || errorMessage(error)}`;
     }
   },
 };

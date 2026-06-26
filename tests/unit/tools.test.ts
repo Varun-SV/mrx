@@ -52,6 +52,13 @@ describe('shellTool', () => {
     const result = await shellTool.execute({ command: 'sleep 100' });
     expect(result).toContain('timeout exceeded');
   });
+
+  it('handles non-Error thrown values safely', async () => {
+    mockExecaFn.mockRejectedValueOnce('plain string error');
+    const result = await shellTool.execute({ command: 'bad' });
+    expect(result).toMatch(/ERROR:/);
+    expect(result).toContain('plain string error');
+  });
 });
 
 describe('fileReadTool', () => {
@@ -191,6 +198,33 @@ describe('webFetchTool', () => {
     mockFetchFn.mockRejectedValueOnce(new Error('network timeout'));
     const result = await webFetchTool.execute({ url: 'https://bad.example.com' });
     expect(result).toMatch(/ERROR:/);
+  });
+
+  it('strips script and style tags from HTML', async () => {
+    const html = '<html><head><style>body { color: red; }</style></head><body><script>alert(1)</script><p>Clean text</p></body></html>';
+    const mockBuffer = Buffer.from(html);
+    mockFetchFn.mockResolvedValueOnce({ ok: true, buffer: async () => mockBuffer });
+
+    const result = await webFetchTool.execute({ url: 'https://example.com' });
+    expect(result).toContain('Clean text');
+    expect(result).not.toContain('color: red');
+    expect(result).not.toContain('alert(1)');
+  });
+
+  it('handles a non-Error thrown value safely', async () => {
+    mockFetchFn.mockRejectedValueOnce('plain string error');
+    const result = await webFetchTool.execute({ url: 'https://example.com' });
+    expect(result).toMatch(/ERROR:/);
+    expect(result).toContain('plain string error');
+  });
+
+  it('decodes HTML entities in extracted text', async () => {
+    const html = '<p>A &amp; B &lt;C&gt; &quot;D&quot;</p>';
+    const mockBuffer = Buffer.from(html);
+    mockFetchFn.mockResolvedValueOnce({ ok: true, buffer: async () => mockBuffer });
+
+    const result = await webFetchTool.execute({ url: 'https://example.com', selector: 'p' });
+    expect(result).toContain('A & B <C> "D"');
   });
 });
 
