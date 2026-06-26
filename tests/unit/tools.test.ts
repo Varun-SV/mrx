@@ -201,7 +201,8 @@ describe('webFetchTool', () => {
   });
 
   it('strips script and style tags from HTML', async () => {
-    const html = '<html><head><style>body { color: red; }</style></head><body><script>alert(1)</script><p>Clean text</p></body></html>';
+    const html =
+      '<html><head><style>body { color: red; }</style></head><body><script>alert(1)</script><p>Clean text</p></body></html>';
     const mockBuffer = Buffer.from(html);
     mockFetchFn.mockResolvedValueOnce({ ok: true, buffer: async () => mockBuffer });
 

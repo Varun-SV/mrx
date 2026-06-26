@@ -33,7 +33,9 @@ describe('thinkThenAnswer', () => {
 
   it('extracts reasoning from <thinking> tags', async () => {
     mockGenerate
-      .mockResolvedValueOnce(ok('<thinking>Deep thought about the problem</thinking>\nHere is my conclusion.'))
+      .mockResolvedValueOnce(
+        ok('<thinking>Deep thought about the problem</thinking>\nHere is my conclusion.'),
+      )
       .mockResolvedValueOnce(ok('The answer is 42.'));
 
     const result = await thinkThenAnswer('What is the answer?', [], config);
@@ -44,7 +46,9 @@ describe('thinkThenAnswer', () => {
 
   it('falls back to full response if no <thinking> tags present', async () => {
     const rawResponse = 'Just a direct response without thinking tags.';
-    mockGenerate.mockResolvedValueOnce(ok(rawResponse)).mockResolvedValueOnce(ok('Executor response.'));
+    mockGenerate
+      .mockResolvedValueOnce(ok(rawResponse))
+      .mockResolvedValueOnce(ok('Executor response.'));
 
     const result = await thinkThenAnswer('Simple question', [], config);
 
@@ -117,7 +121,9 @@ describe('thinkThenAnswer', () => {
 
   it('wraps reasoner failures with a classified error message', async () => {
     mockGenerate.mockRejectedValueOnce(new Error('ECONNREFUSED connect to ollama'));
-    await expect(thinkThenAnswer('test', [], config)).rejects.toThrow(/\[reasoner\].*Network error/);
+    await expect(thinkThenAnswer('test', [], config)).rejects.toThrow(
+      /\[reasoner\].*Network error/,
+    );
   });
 
   it('wraps executor failures with a classified error message', async () => {

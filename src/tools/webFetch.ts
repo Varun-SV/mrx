@@ -46,7 +46,7 @@ function htmlToText(html: string): string {
   text = text
     .split('\n')
     .map((line) => line.trim())
-    .filter((line, i, arr) => line || (arr[i - 1] !== ''))
+    .filter((line, i, arr) => line || arr[i - 1] !== '')
     .join('\n')
     .trim();
 

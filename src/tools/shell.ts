@@ -24,7 +24,11 @@ export const shellTool: ToolDefinition = {
     required: ['command'],
   },
   async execute(args) {
-    const { command, cwd, timeout = 30000 } = args as {
+    const {
+      command,
+      cwd,
+      timeout = 30000,
+    } = args as {
       command: string;
       cwd?: string;
       timeout?: number;

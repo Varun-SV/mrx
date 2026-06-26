@@ -11,12 +11,20 @@ import type { CoreMessage } from 'ai';
 
 const KNOWN_ROLES: Role[] = ['reasoner', 'executor', 'tool_caller'];
 
-export function parseManualPrefix(message: string): { role: Role | null; content: string; warning?: string } {
+export function parseManualPrefix(message: string): {
+  role: Role | null;
+  content: string;
+  warning?: string;
+} {
   const trimmed = message.trimStart();
 
   // Reject double-prefix like @@reasoner
   if (trimmed.startsWith('@@')) {
-    return { role: null, content: message, warning: 'Invalid prefix "@@" — use @reasoner, @executor, or @tool_caller.' };
+    return {
+      role: null,
+      content: message,
+      warning: 'Invalid prefix "@@" — use @reasoner, @executor, or @tool_caller.',
+    };
   }
 
   if (!trimmed.startsWith('@')) {
@@ -31,7 +39,11 @@ export function parseManualPrefix(message: string): { role: Role | null; content
   if (KNOWN_ROLES.includes(token as Role)) {
     // Content is required — a bare @role with no message is a no-op
     if (!content) {
-      return { role: null, content: message, warning: `Prefix @${token} requires a message after it.` };
+      return {
+        role: null,
+        content: message,
+        warning: `Prefix @${token} requires a message after it.`,
+      };
     }
     return { role: token as Role, content };
   }
@@ -48,7 +60,11 @@ const DEFAULT_SYSTEM = `You are a helpful assistant. You can prefix your message
 
 function classifyError(error: unknown, role: string): Error {
   const msg = error instanceof Error ? error.message : String(error);
-  if (msg.includes('401') || msg.toLowerCase().includes('authentication') || msg.toLowerCase().includes('api key')) {
+  if (
+    msg.includes('401') ||
+    msg.toLowerCase().includes('authentication') ||
+    msg.toLowerCase().includes('api key')
+  ) {
     return new Error(`[${role}] Authentication failed — check your API key. ${msg}`);
   }
   if (msg.includes('429') || msg.toLowerCase().includes('rate limit')) {
@@ -88,7 +104,12 @@ export async function manualRoute(
         messages,
         system: DEFAULT_SYSTEM,
         onChunk: (chunk) =>
-          onStream?.({ type: 'response', content: chunk, role: effectiveRole, model: modelConfig.model }),
+          onStream?.({
+            type: 'response',
+            content: chunk,
+            role: effectiveRole,
+            model: modelConfig.model,
+          }),
         onFinish: () => onStream?.({ type: 'done', content: '' }),
       });
     } else {

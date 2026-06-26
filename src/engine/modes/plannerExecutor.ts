@@ -53,7 +53,11 @@ function groupStepsIntoWaves(steps: string[]): number[][] {
 
 function classifyError(error: unknown, role: string): Error {
   const msg = error instanceof Error ? error.message : String(error);
-  if (msg.includes('401') || msg.toLowerCase().includes('authentication') || msg.toLowerCase().includes('api key')) {
+  if (
+    msg.includes('401') ||
+    msg.toLowerCase().includes('authentication') ||
+    msg.toLowerCase().includes('api key')
+  ) {
     return new Error(`[${role}] Authentication failed — check your API key. ${msg}`);
   }
   if (msg.includes('429') || msg.toLowerCase().includes('rate limit')) {
@@ -83,13 +87,22 @@ export async function plannerExecutor(
   // Step 1: Generate plan
   let planText: string;
   try {
-    const result = await generate({ modelConfig: reasonerModel, messages: baseMessages, system: PLANNER_SYSTEM });
+    const result = await generate({
+      modelConfig: reasonerModel,
+      messages: baseMessages,
+      system: PLANNER_SYSTEM,
+    });
     planText = result.text;
   } catch (error: unknown) {
     throw classifyError(error, 'reasoner/planner');
   }
 
-  onStream?.({ type: 'reasoning', content: planText, role: 'reasoner', model: reasonerModel.model });
+  onStream?.({
+    type: 'reasoning',
+    content: planText,
+    role: 'reasoner',
+    model: reasonerModel.model,
+  });
 
   const steps = parsePlan(planText);
   const allToolsInvoked: ToolCall[] = [];
@@ -162,7 +175,11 @@ export async function plannerExecutor(
 
   let finalResponse: string;
   try {
-    const result = await generate({ modelConfig: executorModel, messages: synthesisMessages, system: synthesisSystem });
+    const result = await generate({
+      modelConfig: executorModel,
+      messages: synthesisMessages,
+      system: synthesisSystem,
+    });
     finalResponse = result.text;
   } catch (error: unknown) {
     throw classifyError(error, 'executor/synthesis');

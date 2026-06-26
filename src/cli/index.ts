@@ -106,10 +106,14 @@ program
     const config = loadConfig(opts.config);
     console.log(chalk.green('✓ Config valid'));
     console.log(
-      chalk.dim(`  Reasoner:    ${config.models.reasoner.provider}/${config.models.reasoner.model}`),
+      chalk.dim(
+        `  Reasoner:    ${config.models.reasoner.provider}/${config.models.reasoner.model}`,
+      ),
     );
     console.log(
-      chalk.dim(`  Executor:    ${config.models.executor.provider}/${config.models.executor.model}`),
+      chalk.dim(
+        `  Executor:    ${config.models.executor.provider}/${config.models.executor.model}`,
+      ),
     );
     if (config.models.tool_caller) {
       console.log(

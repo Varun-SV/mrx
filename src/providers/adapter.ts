@@ -9,21 +9,32 @@ function resolveModel(config: ModelConfig) {
   switch (config.provider) {
     case 'openai': {
       const key = config.apiKey ?? process.env.OPENAI_API_KEY;
-      if (!key) throw new Error('OpenAI API key not found. Set OPENAI_API_KEY env var or apiKey in config.');
+      if (!key)
+        throw new Error(
+          'OpenAI API key not found. Set OPENAI_API_KEY env var or apiKey in config.',
+        );
       return createOpenAI({ apiKey: key })(config.model);
     }
     case 'anthropic': {
       const key = config.apiKey ?? process.env.ANTHROPIC_API_KEY;
-      if (!key) throw new Error('Anthropic API key not found. Set ANTHROPIC_API_KEY env var or apiKey in config.');
+      if (!key)
+        throw new Error(
+          'Anthropic API key not found. Set ANTHROPIC_API_KEY env var or apiKey in config.',
+        );
       return createAnthropic({ apiKey: key })(config.model);
     }
     case 'google': {
       const key = config.apiKey ?? process.env.GOOGLE_API_KEY;
-      if (!key) throw new Error('Google API key not found. Set GOOGLE_API_KEY env var or apiKey in config.');
+      if (!key)
+        throw new Error(
+          'Google API key not found. Set GOOGLE_API_KEY env var or apiKey in config.',
+        );
       return createGoogleGenerativeAI({ apiKey: key })(config.model);
     }
     case 'ollama':
-      return createOllama({ baseURL: config.baseUrl ?? 'http://localhost:11434/api' })(config.model);
+      return createOllama({ baseURL: config.baseUrl ?? 'http://localhost:11434/api' })(
+        config.model,
+      );
     case 'lmstudio':
       return createOpenAI({
         baseURL: config.baseUrl ?? 'http://localhost:1234/v1',
@@ -31,7 +42,10 @@ function resolveModel(config: ModelConfig) {
       })(config.model);
     case 'openrouter': {
       const key = config.apiKey ?? process.env.OPENROUTER_API_KEY;
-      if (!key) throw new Error('OpenRouter API key not found. Set OPENROUTER_API_KEY env var or apiKey in config.');
+      if (!key)
+        throw new Error(
+          'OpenRouter API key not found. Set OPENROUTER_API_KEY env var or apiKey in config.',
+        );
       return createOpenAI({
         baseURL: 'https://openrouter.ai/api/v1',
         apiKey: key,
