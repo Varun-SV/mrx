@@ -59,24 +59,21 @@ const InputBar: React.FC<InputBarProps> = ({
     }
 
     if (key.upArrow) {
-      setHistoryIdx((prev) => {
-        const next = Math.min(prev + 1, history.length - 1);
-        if (next >= 0 && history[next] !== undefined) setInput(history[next]);
-        return next;
-      });
+      const next = Math.min(historyIdx + 1, history.length - 1);
+      if (next >= 0 && history[next] !== undefined) setInput(history[next]);
+      setHistoryIdx(next);
       return;
     }
 
     if (key.downArrow) {
-      setHistoryIdx((prev) => {
-        const next = prev - 1;
-        if (next < 0) {
-          setInput('');
-          return -1;
-        }
-        if (history[next] !== undefined) setInput(history[next]);
-        return next;
-      });
+      const next = historyIdx - 1;
+      if (next < 0) {
+        setInput('');
+        setHistoryIdx(-1);
+        return;
+      }
+      if (history[next] !== undefined) setInput(history[next]);
+      setHistoryIdx(next);
       return;
     }
 
