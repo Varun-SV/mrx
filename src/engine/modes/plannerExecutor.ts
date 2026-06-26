@@ -7,6 +7,7 @@ import type {
   OrchestrationResult,
   StreamChunk,
   ToolCall,
+  ToolResult,
 } from '../../types/index.js';
 import type { CoreMessage } from 'ai';
 
@@ -19,6 +20,53 @@ function parsePlan(planText: string): string[] {
     .filter((line) => /^\d+\./.test(line))
     .map((line) => line.replace(/^\d+\.\s*/, '').trim())
     .filter(Boolean);
+}
+
+/**
+ * Groups step indices into execution waves. Steps in the same wave are independent
+ * (don't reference prior incomplete steps) and can run in parallel.
+ */
+function groupStepsIntoWaves(steps: string[]): number[][] {
+  const completed = new Set<number>();
+  const waves: number[][] = [];
+  let remaining = steps.map((_, i) => i);
+
+  while (remaining.length > 0) {
+    const wave = remaining.filter((i) => {
+      for (let j = 0; j < i; j++) {
+        if (!completed.has(j) && steps[i].toLowerCase().includes(`step ${j + 1}`)) {
+          return false;
+        }
+      }
+      return true;
+    });
+
+    // Deadlock guard: if nothing is ready, take the first remaining step
+    const batch = wave.length > 0 ? wave : [remaining[0]];
+    waves.push(batch);
+    batch.forEach((i) => completed.add(i));
+    remaining = remaining.filter((i) => !completed.has(i));
+  }
+
+  return waves;
+}
+
+function classifyError(error: unknown, role: string): Error {
+  const msg = error instanceof Error ? error.message : String(error);
+  if (
+    msg.includes('401') ||
+    msg.toLowerCase().includes('authentication') ||
+    msg.toLowerCase().includes('api key')
+  ) {
+    return new Error(`[${role}] Authentication failed — check your API key. ${msg}`);
+  }
+  if (msg.includes('429') || msg.toLowerCase().includes('rate limit')) {
+    return new Error(`[${role}] Rate limited by provider. ${msg}`);
+  }
+  if (msg.includes('timeout') || msg.includes('ECONNREFUSED') || msg.includes('ENOTFOUND')) {
+    return new Error(`[${role}] Network error — is the provider reachable? ${msg}`);
+  }
+  return new Error(`[${role}] ${msg}`);
 }
 
 export async function plannerExecutor(
@@ -37,11 +85,17 @@ export async function plannerExecutor(
   ];
 
   // Step 1: Generate plan
-  const planText = await generate({
-    modelConfig: reasonerModel,
-    messages: baseMessages,
-    system: PLANNER_SYSTEM,
-  });
+  let planText: string;
+  try {
+    const result = await generate({
+      modelConfig: reasonerModel,
+      messages: baseMessages,
+      system: PLANNER_SYSTEM,
+    });
+    planText = result.text;
+  } catch (error: unknown) {
+    throw classifyError(error, 'reasoner/planner');
+  }
 
   onStream?.({
     type: 'reasoning',
@@ -52,38 +106,62 @@ export async function plannerExecutor(
 
   const steps = parsePlan(planText);
   const allToolsInvoked: ToolCall[] = [];
-  const stepResults: string[] = [];
+  const allToolResults: ToolResult[] = [];
+  const stepResults: string[] = new Array(steps.length).fill('');
 
-  // Step 2: Execute each step
-  for (let i = 0; i < steps.length; i++) {
-    const step = steps[i];
-    const stepContext = stepResults.map((r, idx) => `Step ${idx + 1} result: ${r}`).join('\n');
+  // Step 2: Execute steps in parallel waves
+  const waves = groupStepsIntoWaves(steps);
 
-    const executorSystem = [
-      `Original user query: ${userMessage}`,
-      `Full plan:\n${steps.map((s, idx) => `${idx + 1}. ${s}`).join('\n')}`,
-      `You are now executing step ${i + 1}: ${step}`,
-      stepResults.length > 0 ? `Previous step results:\n${stepContext}` : '',
-    ]
-      .filter(Boolean)
-      .join('\n\n');
+  for (const wave of waves) {
+    const wavePromises = wave.map(async (i) => {
+      const step = steps[i];
+      const priorContext = stepResults
+        .slice(0, i)
+        .map((r, idx) => (r ? `Step ${idx + 1} result: ${r}` : ''))
+        .filter(Boolean)
+        .join('\n');
 
-    const stepMessages: CoreMessage[] = [{ role: 'user', content: step }];
+      const executorSystem = [
+        `Original user query: ${userMessage}`,
+        `Full plan:\n${steps.map((s, idx) => `${idx + 1}. ${s}`).join('\n')}`,
+        `You are now executing step ${i + 1}: ${step}`,
+        priorContext ? `Previous step results:\n${priorContext}` : '',
+      ]
+        .filter(Boolean)
+        .join('\n\n');
 
-    const stepResult = await generate({
-      modelConfig: executorModel,
-      messages: stepMessages,
-      tools,
-      system: executorSystem,
+      const stepMessages: CoreMessage[] = [{ role: 'user', content: step }];
+
+      let stepResult: string;
+      let stepToolCalls: ToolCall[] = [];
+      let stepToolResults: ToolResult[] = [];
+      try {
+        const result = await generate({
+          modelConfig: executorModel,
+          messages: stepMessages,
+          tools,
+          system: executorSystem,
+        });
+        stepResult = result.text;
+        stepToolCalls = result.toolCalls;
+        stepToolResults = result.toolResults;
+      } catch (error: unknown) {
+        throw classifyError(error, `executor/step-${i + 1}`);
+      }
+
+      stepResults[i] = stepResult;
+      allToolsInvoked.push(...stepToolCalls);
+      allToolResults.push(...stepToolResults);
+
+      onStream?.({
+        type: 'response',
+        content: `[Step ${i + 1}/${steps.length}] ${stepResult}\n`,
+        role: 'executor',
+        model: executorModel.model,
+      });
     });
 
-    stepResults.push(stepResult);
-    onStream?.({
-      type: 'response',
-      content: `[Step ${i + 1}/${steps.length}] ${stepResult}\n`,
-      role: 'executor',
-      model: executorModel.model,
-    });
+    await Promise.all(wavePromises);
   }
 
   // Step 3: Synthesize
@@ -95,11 +173,17 @@ export async function plannerExecutor(
     },
   ];
 
-  const finalResponse = await generate({
-    modelConfig: executorModel,
-    messages: synthesisMessages,
-    system: synthesisSystem,
-  });
+  let finalResponse: string;
+  try {
+    const result = await generate({
+      modelConfig: executorModel,
+      messages: synthesisMessages,
+      system: synthesisSystem,
+    });
+    finalResponse = result.text;
+  } catch (error: unknown) {
+    throw classifyError(error, 'executor/synthesis');
+  }
 
   onStream?.({ type: 'done', content: '' });
 
@@ -124,6 +208,8 @@ export async function plannerExecutor(
         modelRole: 'executor' as const,
         timestamp: Date.now(),
         model: executorModel.model,
+        toolCalls: allToolsInvoked.length > 0 ? allToolsInvoked : undefined,
+        toolResults: allToolResults.length > 0 ? allToolResults : undefined,
       })),
       {
         id: crypto.randomUUID(),

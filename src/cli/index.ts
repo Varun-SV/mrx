@@ -2,7 +2,7 @@
 import { Command } from 'commander';
 import { loadConfig } from '../config/loader.js';
 import { orchestrate } from '../engine/orchestrator.js';
-import type { InteractionMode } from '../types/index.js';
+import type { InteractionMode, ModelConfig } from '../types/index.js';
 import chalk from 'chalk';
 import ora from 'ora';
 
@@ -103,14 +103,17 @@ program
   .description('Validate config and test provider connectivity')
   .option('-c, --config <path>', 'Path to config file')
   .action(async (opts) => {
-    // Load config (throws with helpful message on invalid)
     const config = loadConfig(opts.config);
     console.log(chalk.green('✓ Config valid'));
     console.log(
-      chalk.dim(`  Reasoner:  ${config.models.reasoner.provider}/${config.models.reasoner.model}`),
+      chalk.dim(
+        `  Reasoner:    ${config.models.reasoner.provider}/${config.models.reasoner.model}`,
+      ),
     );
     console.log(
-      chalk.dim(`  Executor:  ${config.models.executor.provider}/${config.models.executor.model}`),
+      chalk.dim(
+        `  Executor:    ${config.models.executor.provider}/${config.models.executor.model}`,
+      ),
     );
     if (config.models.tool_caller) {
       console.log(
@@ -119,8 +122,40 @@ program
         ),
       );
     }
-    // TODO: Ping each provider with a 1-token test call
-    console.log(chalk.yellow('  Provider connectivity check not yet implemented.'));
+
+    console.log('');
+    console.log(chalk.dim('Testing provider connectivity...'));
+
+    const { generate } = await import('../providers/adapter.js');
+
+    const modelsToCheck: Array<[string, ModelConfig]> = [
+      ['reasoner', config.models.reasoner],
+      ['executor', config.models.executor],
+      ...(config.models.tool_caller
+        ? [['tool_caller', config.models.tool_caller] as [string, ModelConfig]]
+        : []),
+    ];
+
+    let allOk = true;
+    for (const [role, modelConfig] of modelsToCheck) {
+      const label = `${role} (${modelConfig.provider}/${modelConfig.model})`;
+      const spinner = ora({ text: chalk.dim(`Pinging ${label}...`), color: 'cyan' }).start();
+      const start = Date.now();
+      try {
+        await generate({
+          modelConfig: { ...modelConfig, maxTokens: 5 },
+          messages: [{ role: 'user', content: 'Reply with: ok' }],
+          system: 'Reply with exactly: ok',
+        });
+        spinner.succeed(chalk.green(`${label}: OK`) + chalk.dim(` (${Date.now() - start}ms)`));
+      } catch (error: unknown) {
+        const msg = error instanceof Error ? error.message : String(error);
+        spinner.fail(chalk.red(`${label}: FAILED`) + chalk.dim(` — ${msg}`));
+        allOk = false;
+      }
+    }
+
+    if (!allOk) process.exit(1);
   });
 
 program.parse();

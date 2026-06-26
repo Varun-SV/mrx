@@ -7,7 +7,6 @@ import { DEFAULT_CONFIG } from '../../src/config/defaults.js';
 
 describe('loadConfig', () => {
   it('returns DEFAULT_CONFIG when no config file is found', () => {
-    // Run in a temp dir where no config exists
     const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'mrx-test-'));
     const originalCwd = process.cwd();
     try {
@@ -100,3 +99,7 @@ display:
     expect(result).toBe('/absolute/path/file.db');
   });
 });
+
+// NOTE: API key validation in src/providers/adapter.ts cannot be tested here because
+// jest.config.js maps all adapter.js imports to a mock. The validation is implemented
+// in resolveModel() and tested end-to-end via `mrx check`.
