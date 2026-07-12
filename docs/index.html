@@ -56,14 +56,14 @@ function Nav() {
         <a href="#" style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
           <img src="./assets/mrx-mark.svg" width="26" height="26" alt="" />
           <span style={{ fontWeight: 700, fontSize: 'var(--text-md)', color: 'var(--text-bright)' }}>mrx</span>
-          <Badge tone="neutral" style={{ marginLeft: 2 }}>v0.1.0</Badge>
+          <Badge tone="neutral" style={{ marginLeft: 2 }}>v0.1.3</Badge>
         </a>
         <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 22 }}>
           {links.map((l) => (
             <a key={l} href={`#${l.toLowerCase()}`} style={{ fontSize: 'var(--text-xs)', color: 'var(--text-muted)' }}>{l}</a>
           ))}
           <a href="https://github.com/Varun-SV/mrx" target="_blank" rel="noopener" style={{ fontSize: 'var(--text-xs)', color: 'var(--text-muted)' }}>GitHub ↗</a>
-          <Button variant="primary" size="sm" prefix="›" onClick={() => window.open('https://github.com/Varun-SV/mrx', '_blank')}>npm i -g mrx</Button>
+          <Button variant="primary" size="sm" prefix="›" onClick={() => window.open('https://www.npmjs.com/package/mrx-ai', '_blank')}>npm i -g mrx-ai</Button>
         </div>
       </div>
     </nav>
@@ -116,7 +116,7 @@ function Hero() {
             <Button variant="secondary" size="lg" onClick={() => window.open('https://github.com/Varun-SV/mrx', '_blank')}>Read the docs</Button>
           </div>
           <div style={{ maxWidth: 360 }}>
-            <CodeBlock label="bash" chrome>{'npm install -g mrx\nmrx ask "explain recursion"'}</CodeBlock>
+            <CodeBlock label="bash" chrome>{'npm install -g mrx-ai\nmrx ask "explain recursion"'}</CodeBlock>
           </div>
         </div>
         <HeroTerminal />
@@ -235,7 +235,7 @@ function Install() {
         <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 'var(--text-2xl)', fontWeight: 700, color: 'var(--text-bright)', margin: '0 auto 14px', maxWidth: '20ch' }}>No config required. Defaults to Ollama.</h2>
         <p style={{ fontSize: 'var(--text-sm)', color: 'var(--text-muted)', margin: '0 auto 28px', maxWidth: '48ch' }}>Install globally, point it at your models, and start a session. Make sure <span style={{ color: 'var(--role-reasoner)' }}>ollama</span> is running locally.</p>
         <div style={{ maxWidth: 440, margin: '0 auto', position: 'relative' }}>
-          <CodeBlock label="bash" chrome accent="brand">{'npm install -g mrx\nmrx chat'}</CodeBlock>
+          <CodeBlock label="bash" chrome accent="brand">{'npm install -g mrx-ai\nmrx chat'}</CodeBlock>
         </div>
         <div style={{ display: 'flex', gap: 18, justifyContent: 'center', marginTop: 26, flexWrap: 'wrap' }}>
           <KeyHint keys="Enter" label="send" />

@@ -31,10 +31,12 @@ run_shell({ command: "npm test", cwd: "/home/user/myproject", timeout: 60000 })
 ### ⚠️ Security implications
 Enabling `shell: true` allows the model to execute **arbitrary bash commands** on your machine. This includes file deletion, network requests, and system modifications.
 
+Commands execute directly without an approval or confirmation prompt. Keep `shell` disabled unless you explicitly need it.
+
 **Only enable `shell: true` if:**
 - You trust the models you're using
 - You're working in a sandboxed environment
-- You're using manual mode with careful review of tool calls
+- You have independently reviewed the task and accept that commands run without approval
 
 ---
 
@@ -116,5 +118,5 @@ Fetch the content of a URL and return it as plain text.
 - `ERROR: <message>` on network failure
 
 ### Notes
-- Requests include a `User-Agent: mrx-cli/0.1.0` header
+- Requests include a `User-Agent: mrx-cli/0.1.3` header
 - Responses over 50 KB are truncated to the first 50 KB

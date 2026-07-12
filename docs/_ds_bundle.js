@@ -1377,7 +1377,7 @@ function Nav() {
     style: {
       marginLeft: 2
     }
-  }, "v0.1.0")), /*#__PURE__*/React.createElement("div", {
+  }, "v0.1.3")), /*#__PURE__*/React.createElement("div", {
     style: {
       marginLeft: 'auto',
       display: 'flex',
@@ -1400,8 +1400,9 @@ function Nav() {
   }, "GitHub \u2197"), /*#__PURE__*/React.createElement(Button, {
     variant: "primary",
     size: "sm",
-    prefix: "\u203A"
-  }, "npm i -g mrx"))));
+    prefix: "\u203A",
+    onClick: () => window.open('https://www.npmjs.com/package/mrx-ai', '_blank')
+  }, "npm i -g mrx-ai"))));
 }
 
 /* ── hero ────────────────────────────────────────────────────── */
@@ -1561,7 +1562,7 @@ function Hero() {
   }, /*#__PURE__*/React.createElement(CodeBlock, {
     label: "bash",
     chrome: true
-  }, 'npm install -g mrx\nmrx ask "explain recursion"'))), /*#__PURE__*/React.createElement(HeroTerminal, null)));
+  }, 'npm install -g mrx-ai\nmrx ask "explain recursion"'))), /*#__PURE__*/React.createElement(HeroTerminal, null)));
 }
 
 /* ── why mrx ─────────────────────────────────────────────────── */
@@ -1902,7 +1903,7 @@ function Install() {
     label: "bash",
     chrome: true,
     accent: "brand"
-  }, 'npm install -g mrx\nmrx chat')), /*#__PURE__*/React.createElement("div", {
+  }, 'npm install -g mrx-ai\nmrx chat')), /*#__PURE__*/React.createElement("div", {
     style: {
       display: 'flex',
       gap: 18,
