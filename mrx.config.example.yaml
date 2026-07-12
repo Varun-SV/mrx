@@ -33,7 +33,7 @@ models:
     maxTokens: 2048
 
 tools:
-  shell: true          # Allow shell command execution (ask user for confirmation)
+  shell: false         # Disabled by default; commands run directly without confirmation
   file_system: true    # Read/write files
   web_fetch: true      # Fetch URLs
 

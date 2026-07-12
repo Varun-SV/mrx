@@ -1,5 +1,6 @@
 import fetch from 'node-fetch';
 import type { ToolDefinition } from '../types/index.js';
+import { USER_AGENT } from '../version.js';
 
 const MAX_RESPONSE_BYTES = 50 * 1024; // 50 KB
 
@@ -72,7 +73,7 @@ export const webFetchTool: ToolDefinition = {
     const { url, selector } = args as { url: string; selector?: string };
     try {
       const response = await fetch(url, {
-        headers: { 'User-Agent': 'mrx-cli/0.1.0' },
+        headers: { 'User-Agent': USER_AGENT },
       });
 
       if (!response.ok) {

@@ -5,10 +5,11 @@ import { orchestrate } from '../engine/orchestrator.js';
 import type { InteractionMode, ModelConfig } from '../types/index.js';
 import chalk from 'chalk';
 import ora from 'ora';
+import { VERSION } from '../version.js';
 
 const program = new Command();
 
-program.name('mrx').description('Multi-role model orchestration CLI').version('0.1.0');
+program.name('mrx').description('Multi-role model orchestration CLI').version(VERSION);
 
 // One-shot command
 program

@@ -2,10 +2,10 @@
 
 > Assign different LLMs to different roles (reasoner / executor / tool caller) in a single interactive session.
 
-[![npm version](https://img.shields.io/npm/v/mrx)](https://www.npmjs.com/package/mrx)
+[![npm version](https://img.shields.io/npm/v/mrx-ai)](https://www.npmjs.com/package/mrx-ai)
 [![CI](https://github.com/Varun-SV/mrx/actions/workflows/ci.yml/badge.svg)](https://github.com/Varun-SV/mrx/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
-[![Node.js](https://img.shields.io/badge/node-%3E%3D20.0.0-brightgreen)](https://nodejs.org)
+[![Node.js](https://img.shields.io/badge/node-%3E%3D22.12-brightgreen)](https://nodejs.org)
 
 ---
 
@@ -20,7 +20,7 @@
 ## Quick Start
 
 ```bash
-npm install -g mrx
+npm install -g mrx-ai
 mrx ask "explain recursion"
 ```
 
@@ -32,12 +32,12 @@ No config required — defaults to Ollama with `qwen3:8b` (reasoner) and `llama3
 
 ### Global install (recommended)
 ```bash
-npm install -g mrx
+npm install -g mrx-ai
 ```
 
 ### One-shot via npx (no install needed)
 ```bash
-npx mrx ask "what is the capital of France?"
+npx mrx-ai ask "what is the capital of France?"
 ```
 
 ### Local development
@@ -82,7 +82,7 @@ models:
     maxTokens: 2048
 
 tools:
-  shell: true
+  shell: false
   file_system: true
   web_fetch: true
 
@@ -193,7 +193,7 @@ Tools let models interact with your environment. Enable them in config:
 | File System | `tools.file_system: true` | Read, write, and list files |
 | Web Fetch | `tools.web_fetch: true` | Fetch URLs and extract text |
 
-> ⚠️ **Security note**: `shell: true` allows the model to run arbitrary bash commands. Only enable on trusted inputs or in sandboxed environments.
+> ⚠️ **Security note**: `shell: true` executes model-requested bash commands directly, without confirmation. Keep it disabled unless you trust the input and models and are running in a sandboxed environment.
 
 See [docs/TOOLS.md](docs/TOOLS.md) for full tool documentation.
 

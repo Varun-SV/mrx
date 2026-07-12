@@ -1,30 +1,136 @@
 name: Release
 
 on:
-  push:
-    tags:
-      - 'v*.*.*'
+  workflow_run:
+    workflows: ['CI']
+    types: [completed]
+    branches: [main]
+
+permissions:
+  contents: write
+  id-token: write
+
+concurrency:
+  group: release-main
+  cancel-in-progress: false
 
 jobs:
   release:
     name: Publish to npm
+    if: >-
+      github.event.workflow_run.conclusion == 'success' &&
+      github.event.workflow_run.event == 'push' &&
+      github.event.workflow_run.head_branch == 'main' &&
+      github.event.workflow_run.head_repository.full_name == github.repository
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - name: Check out verified commit
+        uses: actions/checkout@v4
         with:
-          node-version: '20'
+          ref: ${{ github.event.workflow_run.head_sha }}
+          persist-credentials: false
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
           registry-url: 'https://registry.npmjs.org'
           cache: 'npm'
-      - run: npm ci
-      - run: npm run build
-      - run: npm run test
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Check release eligibility
+        id: release_gate
         env:
-          NODE_OPTIONS: --experimental-vm-modules
-      - run: npm publish
+          RELEASE_SHA: ${{ github.event.workflow_run.head_sha }}
+        run: node scripts/check-release.mjs
+
+      - name: Validate existing release tag
+        if: steps.release_gate.outputs.should_release == 'true'
         env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-      - name: Create GitHub Release
-        uses: softprops/action-gh-release@v2
-        with:
-          generate_release_notes: true
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_VERSION: ${{ steps.release_gate.outputs.version }}
+          TARGET_SHA: ${{ github.event.workflow_run.head_sha }}
+        run: |
+          tag="v$RELEASE_VERSION"
+          set +e
+          tag_response="$(gh api "repos/$GITHUB_REPOSITORY/git/ref/tags/$tag" 2>&1)"
+          tag_status=$?
+          set -e
+
+          if [[ $tag_status -eq 0 ]]; then
+            object_type="$(jq -r '.object.type' <<< "$tag_response")"
+            tag_sha="$(jq -r '.object.sha' <<< "$tag_response")"
+            if [[ "$object_type" == "tag" ]]; then
+              tag_sha="$(gh api "repos/$GITHUB_REPOSITORY/git/tags/$tag_sha" --jq '.object.sha')"
+            fi
+            test "$tag_sha" = "$TARGET_SHA"
+          elif ! grep -q 'HTTP 404' <<< "$tag_response"; then
+            echo "$tag_response" >&2
+            exit "$tag_status"
+          fi
+
+      - name: Build package
+        if: steps.release_gate.outputs.should_publish == 'true'
+        run: npm run build
+
+      - name: Pack and smoke-test package
+        if: steps.release_gate.outputs.should_publish == 'true'
+        id: package
+        env:
+          EXPECTED_VERSION: ${{ steps.release_gate.outputs.version }}
+        run: |
+          npm pack --json --silent > "$RUNNER_TEMP/npm-pack.json"
+          package_file="$(node --input-type=module -e "
+            import fs from 'node:fs';
+            const [entry] = JSON.parse(fs.readFileSync(process.argv[1], 'utf8'));
+            if (!entry?.filename) process.exit(1);
+            process.stdout.write(entry.filename);
+          " "$RUNNER_TEMP/npm-pack.json")"
+
+          smoke_dir="$RUNNER_TEMP/package-smoke"
+          mkdir -p "$smoke_dir"
+          npm install \
+            --prefix "$smoke_dir" \
+            --no-audit \
+            --no-fund \
+            "$GITHUB_WORKSPACE/$package_file"
+
+          actual_version="$("$smoke_dir/node_modules/.bin/mrx" --version)"
+          test "$actual_version" = "$EXPECTED_VERSION"
+          echo "package_file=$package_file" >> "$GITHUB_OUTPUT"
+
+      - name: Publish package
+        if: steps.release_gate.outputs.should_publish == 'true'
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_ACCESS_TOKEN }}
+          PACKAGE_FILE: ${{ steps.package.outputs.package_file }}
+          RELEASE_TAG: ${{ steps.release_gate.outputs.tag }}
+        run: npm publish "$PACKAGE_FILE" --provenance --access public --tag "$RELEASE_TAG"
+
+      - name: Create GitHub release
+        if: steps.release_gate.outputs.should_release == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_NAME: ${{ steps.release_gate.outputs.name }}
+          RELEASE_VERSION: ${{ steps.release_gate.outputs.version }}
+          RELEASE_TAG: ${{ steps.release_gate.outputs.tag }}
+          TARGET_SHA: ${{ github.event.workflow_run.head_sha }}
+        run: |
+          if gh release view "v$RELEASE_VERSION" >/dev/null 2>&1; then
+            echo "GitHub release v$RELEASE_VERSION already exists."
+            exit 0
+          fi
+
+          prerelease=()
+          if [[ "$RELEASE_TAG" == "beta" ]]; then
+            prerelease+=(--prerelease)
+          fi
+
+          gh release create "v$RELEASE_VERSION" \
+            --target "$TARGET_SHA" \
+            --title "$RELEASE_NAME v$RELEASE_VERSION" \
+            --generate-notes \
+            "${prerelease[@]}"

@@ -2,9 +2,16 @@ name: CI
 
 on:
   push:
-    branches: [main, develop]
+    branches: [main]
   pull_request:
-    branches: [main, develop]
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
   lint:
@@ -14,7 +21,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: '22'
           cache: 'npm'
       - run: npm ci
       - run: npm run lint
@@ -25,7 +32,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        node-version: ['20', '22']
+        node-version: ['22.12.0', '24']
     env:
       NODE_OPTIONS: --experimental-vm-modules
     steps:
@@ -38,7 +45,7 @@ jobs:
       - run: npm run test:coverage
       - name: Upload coverage
         uses: codecov/codecov-action@v4
-        if: matrix.node-version == '20'
+        if: matrix.node-version == '22'
         with:
           fail_ci_if_error: false
 
@@ -50,9 +57,13 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: '22'
           cache: 'npm'
       - run: npm ci
       - run: npm run build
       - name: Verify binary
-        run: node dist/cli/index.js --version
+        run: |
+          actual_version="$(node dist/cli/index.js --version)"
+          expected_version="$(node -p 'require("./package.json").version')"
+          test "$actual_version" = "$expected_version"
+      - run: npm run pack:check
