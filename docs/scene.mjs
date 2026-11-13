@@ -1075,6 +1075,8 @@ export async function initScene({ canvas, paused: startPaused = false, lite = fa
     U.uMouse.value.copy(hasPointer && !paused ? mouseS : new THREE.Vector2(9, 9));
     world.rotation.y = mouseS.x * 0.1;
     world.rotation.x = -mouseS.y * 0.05;
+    // scroll velocity only arrives with scroll events, so let it fade once scrolling stops
+    state.vel *= Math.exp(-dt * 8);
     state.ca += (Math.min(1, Math.abs(state.vel) / 2600) - state.ca) * Math.min(1, dt * 6);
     lens.uniforms.uAmt.value =
       0.0004 + state.ca * 0.011 + (state.intro < 1 ? (1 - state.intro) * 0.01 : 0);
