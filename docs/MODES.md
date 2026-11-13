@@ -57,9 +57,8 @@ User message
 │   REASONER model   │  ← Produces numbered plan: 1. X  2. Y  3. Z
 └────────────────────┘
      │
-     ├─ Step 1 ──► EXECUTOR ──► result 1
-     ├─ Step 2 ──► EXECUTOR ──► result 2  (with step 1 result as context)
-     └─ Step 3 ──► EXECUTOR ──► result 3  (with steps 1+2 results as context)
+     ├─ Wave 1: independent steps ──► EXECUTOR calls in parallel
+     └─ Wave 2: dependent steps ────► EXECUTOR with prior results
                        │
                        ▼
                EXECUTOR synthesizes
@@ -70,7 +69,7 @@ User message
 ### Algorithm
 1. Send the user message to the **reasoner** with a prompt requesting a numbered list of steps (no preamble, no markdown).
 2. Parse the numbered steps from the reasoner's output.
-3. For each step: send it to the **executor** along with the original query, the full plan, and all previous step results as context. Tools are available.
+3. Group steps into execution waves using explicit references such as `step 1` in the numbered plan. Independent steps can execute in parallel; a step referencing an earlier incomplete step waits for a later wave. Each executor call receives the original query, full plan, and available prior results. Tools are available in this mode.
 4. After all steps complete, send a synthesis prompt to the **executor**.
 5. Return the synthesis as the final response.
 
@@ -96,6 +95,8 @@ User message
      ├─ starts with @tool_caller ─► TOOL_CALLER model
      └─ no prefix ──────────────► EXECUTOR model (default)
 ```
+
+> Manual mode currently selects a model but does not dispatch tools. `@tool_caller` routes to the configured tool-caller model (or executor fallback). Actual tool execution is wired to `planner_executor`.
 
 ### Prefix syntax
 | Prefix | Routes to |

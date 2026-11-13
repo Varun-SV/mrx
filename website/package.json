@@ -1,0 +1,15 @@
+{
+  "name": "mrx-website",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "node build.mjs",
+    "test": "node smoke.mjs"
+  },
+  "devDependencies": {
+    "marked": "15.0.12",
+    "playwright": "1.56.1",
+    "three": "0.170.0"
+  }
+}
