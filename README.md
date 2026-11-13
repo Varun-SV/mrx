@@ -9,6 +9,8 @@
 
 ---
 
+[**Explore the interactive website →**](https://varun-sv.github.io/mrx/) · [Documentation](https://varun-sv.github.io/mrx/guide/)
+
 ## Why mrx?
 
 - **Role separation** — Use a powerful reasoning model (e.g. `qwen3:14b`) for planning and a fast executor model (e.g. `gpt-4o-mini`) for output. Stop paying reasoning prices for every token.
@@ -124,7 +126,7 @@ mrx ask "design a REST API for a todo app" --mode think_then_answer
 Best for: complex questions, architecture decisions, explanations requiring depth.
 
 ### `planner_executor`
-The **reasoner** produces a numbered step-by-step plan. The **executor** executes each step in sequence, then synthesizes a final answer.
+The **reasoner** produces a numbered step-by-step plan. The **executor** runs steps in dependency-based waves (independent steps can run in parallel), then synthesizes a final answer.
 
 ```bash
 mrx ask "refactor this codebase to use async/await" --mode planner_executor
@@ -139,7 +141,7 @@ You choose the model by prefixing your message with `@reasoner`, `@executor`, or
 mrx chat  # then type: @reasoner what's the best architecture for X?
 ```
 
-Best for: power users who want explicit control over routing.
+Best for: power users who want explicit control over routing. Manual mode currently selects the model but does not dispatch tools; tool execution is wired to `planner_executor`.
 
 See [docs/MODES.md](docs/MODES.md) for ASCII flow diagrams and more examples.
 
