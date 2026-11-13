@@ -11,6 +11,7 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 - Raised the minimum supported runtime from Node.js 20 to Node.js 22.12
 
 ### Added
+- Website: full-screen "The Split" landing page — a self-hosted Three.js particle field that re-forms per scroll chapter (prompt beam and prism, role sculptures, relay, providers, config, wordmark) with a boot sequence, pinned roles story, HUD and graceful fallbacks
 - Initial project structure
 - Three interaction modes: Planner→Executor, Think-then-Answer, Manual
 - Six provider integrations via Vercel AI SDK (OpenAI, Anthropic, Google Gemini, Ollama, LM Studio, OpenRouter)

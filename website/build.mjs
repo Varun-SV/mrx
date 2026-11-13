@@ -24,6 +24,23 @@ await cp(
   resolve(here, 'node_modules/three/build/three.module.min.js'),
   resolve(out, 'assets/vendor/three.module.min.js'),
 );
+// Post-processing addons (bloom + output) imported by scene.mjs; they resolve `three` via the page's import map.
+const jsm = resolve(here, 'node_modules/three/examples/jsm');
+for (const file of [
+  'postprocessing/EffectComposer.js',
+  'postprocessing/RenderPass.js',
+  'postprocessing/UnrealBloomPass.js',
+  'postprocessing/ShaderPass.js',
+  'postprocessing/OutputPass.js',
+  'postprocessing/Pass.js',
+  'postprocessing/MaskPass.js',
+  'shaders/CopyShader.js',
+  'shaders/LuminosityHighPassShader.js',
+  'shaders/OutputShader.js',
+]) {
+  await mkdir(dirname(resolve(out, 'assets/vendor/jsm', file)), { recursive: true });
+  await cp(resolve(jsm, file), resolve(out, 'assets/vendor/jsm', file));
+}
 await cp(
   resolve(here, 'node_modules/three/LICENSE'),
   resolve(out, 'assets/vendor/THREE-LICENSE.txt'),
