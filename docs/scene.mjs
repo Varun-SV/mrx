@@ -1080,7 +1080,8 @@ export async function initScene({ canvas, paused: startPaused = false, lite = fa
       0.0004 + state.ca * 0.011 + (state.intro < 1 ? (1 - state.intro) * 0.01 : 0);
     U.uTime.value = state.t;
 
-    const needs = moving || dirty || prevSc !== state.sc || hasPointer;
+    // the pointer only drives shader uniforms and the world tilt, so it never forces a recompute
+    const needs = moving || dirty || prevSc !== state.sc;
     if (needs) {
       dirty = false;
       const t = state.t,
@@ -1132,7 +1133,8 @@ export async function initScene({ canvas, paused: startPaused = false, lite = fa
       !paused ||
       Math.abs(state.target - state.sc) > 0.0005 ||
       state.ca > 0.01 ||
-      hasPointer ||
+      // while paused, only keep drawing until the parallax tilt has eased back to rest
+      mouseS.lengthSq() > 1e-5 ||
       (state.intro < 1 && !state.hold)
     )
       raf = requestAnimationFrame(frame);
