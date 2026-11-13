@@ -8,7 +8,7 @@
       name="description"
       content="A reasoner to think. An executor to build. A tool caller to act. Bring different language models together in one open-source CLI."
     />
-    <meta name="theme-color" content="#080c10" />
+    <meta name="theme-color" content="#05080c" />
     <meta property="og:title" content="mrx — One prompt. A team of minds." />
     <meta
       property="og:description"
@@ -23,13 +23,140 @@
       type="font/woff2"
       crossorigin
     />
+    <link
+      rel="preload"
+      href="./assets/fonts/JetBrainsMono-Variable.woff2"
+      as="font"
+      type="font/woff2"
+      crossorigin
+    />
     <link rel="stylesheet" href="./site.css" />
+    <script>
+      document.documentElement.classList.add('js');
+    </script>
+    <script type="importmap">
+      { "imports": { "three": "./assets/vendor/three.module.min.js" } }
+    </script>
     <script type="module" src="./site.mjs"></script>
   </head>
-  <body>
+  <body class="landing">
     <a class="skip-link" href="#main">Skip to content</a>
-    <div class="ambient" aria-hidden="true"></div>
-    <div class="viewport-frame" aria-hidden="true"><i></i><i></i><i></i><i></i></div>
+
+    <!-- the stage: one particle field for the whole page -->
+    <canvas id="gl" aria-hidden="true"></canvas>
+    <div class="fallback" aria-hidden="true">
+      <svg viewBox="0 0 800 600" preserveAspectRatio="xMidYMid slice">
+        <defs>
+          <radialGradient id="fb-glow">
+            <stop offset="0" stop-color="#dcebff" stop-opacity=".55" />
+            <stop offset="1" stop-color="#dcebff" stop-opacity="0" />
+          </radialGradient>
+        </defs>
+        <path class="fb-beam" d="M330 -20 L455 300" />
+        <path class="fb-ray r" d="M470 300 C 540 250, 600 200, 660 170" />
+        <path class="fb-ray e" d="M470 300 C 560 300, 640 300, 720 305" />
+        <path class="fb-ray t" d="M470 300 C 540 350, 600 400, 660 430" />
+        <circle cx="462" cy="300" r="70" fill="url(#fb-glow)" />
+        <path class="fb-prism" d="M462 262 L494 318 L430 318 Z" />
+        <circle class="fb-core r" cx="668" cy="166" r="34" />
+        <circle class="fb-core e" cx="730" cy="306" r="34" />
+        <circle class="fb-core t" cx="668" cy="434" r="34" />
+      </svg>
+    </div>
+    <div class="veil" aria-hidden="true"></div>
+    <div class="grain" aria-hidden="true"></div>
+
+    <!-- boot sequence (decorative, skipped for reduced motion) -->
+    <div class="boot" id="boot" aria-hidden="true">
+      <pre id="boot-log"></pre>
+    </div>
+
+    <!-- labels pinned to points in the 3D scene -->
+    <div class="labels" id="labels">
+      <span class="lbl user" data-anchor="0:prompt" aria-hidden="true"
+        ><b>Prompt</b><small>one message in</small></span
+      >
+      <span class="lbl neutral" data-anchor="0:prism" data-place="below" aria-hidden="true"
+        ><b>Orchestrator</b><small>mrx routes the turn</small></span
+      >
+      <button
+        type="button"
+        class="lbl act reasoner"
+        data-core-role="reasoner"
+        data-anchor="0:reasoner"
+        aria-pressed="true"
+      >
+        <b><span>01</span> Reasoner</b><small>think</small>
+      </button>
+      <button
+        type="button"
+        class="lbl act executor"
+        data-core-role="executor"
+        data-anchor="0:executor"
+        aria-pressed="false"
+      >
+        <b><span>02</span> Executor</b><small>build</small>
+      </button>
+      <button
+        type="button"
+        class="lbl act tool"
+        data-core-role="tool_caller"
+        data-anchor="0:tool_caller"
+        aria-pressed="false"
+      >
+        <b><span>03</span> Tool caller</b><small>act</small>
+      </button>
+      <span class="lbl user" data-anchor="2:user" aria-hidden="true"><b>Prompt</b></span>
+      <span class="lbl reasoner" data-anchor="2:reasoner" aria-hidden="true"><b>Reasoner</b></span>
+      <span class="lbl executor" data-anchor="2:executor" aria-hidden="true"><b>Executor</b></span>
+      <span class="lbl tool" data-anchor="2:tool_caller" aria-hidden="true"
+        ><b>Tool caller</b></span
+      >
+      <span class="lbl neutral" data-anchor="2:answer" aria-hidden="true"><b>Answer</b></span>
+      <span class="lbl executor" data-anchor="3:p0" aria-hidden="true"
+        ><b>Ollama</b><small>local</small></span
+      >
+      <span class="lbl reasoner" data-anchor="3:p1" aria-hidden="true"
+        ><b>OpenAI</b><small>api</small></span
+      >
+      <span class="lbl tool" data-anchor="3:p2" aria-hidden="true"
+        ><b>Anthropic</b><small>api</small></span
+      >
+      <span class="lbl user" data-anchor="3:p3" aria-hidden="true"
+        ><b>Gemini</b><small>api</small></span
+      >
+      <span class="lbl executor" data-anchor="3:p4" aria-hidden="true"
+        ><b>LM Studio</b><small>local</small></span
+      >
+      <span class="lbl reasoner" data-anchor="3:p5" aria-hidden="true"
+        ><b>OpenRouter</b><small>api</small></span
+      >
+    </div>
+
+    <!-- HUD frame -->
+    <div class="hud" aria-hidden="false">
+      <i class="c tl"></i><i class="c tr"></i><i class="c bl"></i><i class="c br"></i>
+      <p class="hud-read l" aria-hidden="true">
+        <span class="hud-dot"></span><span id="hud-ch">00 / 06</span
+        ><span id="hud-name">THE SPLIT</span>
+      </p>
+      <div class="hud-read r">
+        <span id="scene-status" role="status">THREE ROLES. ONE SESSION.</span>
+        <span class="hud-sep" aria-hidden="true">·</span>
+        <span id="hud-pts" aria-hidden="true">PTS —</span>
+        <button id="motion-toggle" type="button" aria-pressed="false">Pause motion Ⅱ</button>
+      </div>
+    </div>
+    <nav class="rail" aria-label="Chapters">
+      <a href="#top" data-rail="0"><span>The split</span></a>
+      <a href="#roles" data-rail="1"><span>The cast</span></a>
+      <a href="#playground" data-rail="2"><span>The relay</span></a>
+      <a href="#providers" data-rail="3"><span>Providers</span></a>
+      <a href="#configure" data-rail="4"><span>Config</span></a>
+      <a href="#install" data-rail="5"><span>Install</span></a>
+      <a href="#finale" data-rail="6"><span>mrx</span></a>
+    </nav>
+
     <header class="nav">
       <a class="brand" href="#top" aria-label="mrx home"
         ><img src="./assets/mrx-mark.svg" width="30" height="30" alt="" /><span
@@ -38,337 +165,335 @@
       >
       <nav aria-label="Main navigation">
         <a href="#roles">The roles</a><a href="#playground">Playground</a
-        ><a href="#providers">Providers</a
+        ><a href="#providers">Providers</a><a href="#configure">Config</a
         ><a href="./guide/">Docs <span aria-hidden="true">→</span></a>
       </nav>
       <div class="nav-actions">
         <a class="github-link" href="https://github.com/Varun-SV/mrx"
-          >GitHub <span aria-hidden="true">→</span></a
-        ><a class="button small" href="#install">Get started <span aria-hidden="true">→</span></a>
-      </div>
-    </header>
-    <main id="main">
-      <section id="top" class="hero section">
-        <div class="hero-copy">
-          <p class="eyebrow"><span class="status-dot"></span> MULTI-ROLE MODEL ORCHESTRATION</p>
-          <h1>One prompt.<br />A team of<br /><em>minds.</em></h1>
-          <p class="lead">
-            A reasoner to think. An executor to build.<br />A tool caller to act.
-            <strong>Every model in its element.</strong>
-          </p>
-          <p class="hero-description">
-            Bring your favorite language models together in one terminal. Give each a role. Let
-            their strengths do the talking.
-          </p>
-          <div class="actions">
-            <a class="button" href="#playground"
-              >Explore the orchestration <span aria-hidden="true">↓</span></a
-            ><a class="text-link" href="./guide/"
-              >Read the docs <span aria-hidden="true">→</span></a
-            >
-          </div>
-          <button
-            class="install-command copy-button"
-            data-copy="npm install -g mrx-ai"
-            aria-label="Copy npm install command"
-          >
-            <span><b>$</b> npm install -g mrx-ai</span><span class="copy-label">COPY ⧉</span>
-          </button>
-          <div class="hero-meta">
-            <span>OPEN SOURCE / MIT</span><span>LOCAL + CLOUD</span><span>NODE 22.12+</span>
-          </div>
-        </div>
-        <div class="hero-visual" id="visual">
-          <div class="visual-topline">
-            <span><i></i> ORCHESTRATION CORE</span><span>MRX / 001</span>
-          </div>
-          <div
-            id="scene"
-            role="img"
-            aria-label="Three connected model cores: cyan reasoner, green executor, and amber tool caller."
-          >
-            <div class="scene-fallback" aria-hidden="true">
-              <div class="fallback-core reasoner-core">R</div>
-              <div class="fallback-core executor-core">E</div>
-              <div class="fallback-core tool-core">T</div>
-              <svg viewBox="0 0 600 500"><path d="M300 100L120 360L480 360Z" /></svg>
-            </div>
-          </div>
-          <button
-            type="button"
-            class="core-label label-r"
-            data-core-role="reasoner"
-            aria-pressed="true"
-          >
-            <span>01</span> REASONER <small>THINK</small>
-          </button>
-          <button
-            type="button"
-            class="core-label label-e"
-            data-core-role="executor"
-            aria-pressed="false"
-          >
-            <span>02</span> EXECUTOR <small>BUILD</small>
-          </button>
-          <button
-            type="button"
-            class="core-label label-t"
-            data-core-role="tool_caller"
-            aria-pressed="false"
-          >
-            <span>03</span> TOOL CALLER <small>ACT</small>
-          </button>
-          <div class="visual-bottomline">
-            <span id="scene-status">THREE ROLES. ONE SESSION.</span
-            ><button id="motion-toggle" type="button" aria-pressed="false">
-              Pause motion <span aria-hidden="true">Ⅱ</span>
-            </button>
-          </div>
-          <p class="visual-hint">MOVE TO EXPLORE · CLICK A ROLE TO INSPECT</p>
-        </div>
-        <a class="scroll-cue" href="#roles"
-          ><span>SCROLL TO CONNECT THE DOTS</span><i aria-hidden="true">↓</i></a
+          ><svg viewBox="0 0 16 16" width="15" height="15" fill="currentColor" aria-hidden="true">
+            <path
+              d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"
+            /></svg
+          ><span>GitHub</span></a
+        ><a class="button small" href="#install" data-magnetic
+          >Get started <span aria-hidden="true">→</span></a
         >
-      </section>
-      <div class="principle-strip">
-        <span>YOUR MODELS.</span><span>THEIR STRENGTHS.</span
-        ><span class="strip-accent">ONE SESSION.</span
-        ><span class="strip-mark" aria-hidden="true">✳</span>
       </div>
-      <section id="roles" class="section roles-section">
-        <div class="section-heading">
-          <p class="eyebrow">01 / DIVIDE THE WORK</p>
-          <h2>One model shouldn’t<br />have to <em>do it all.</em></h2>
-          <p class="section-description">
-            Deep thinking and fast execution are different jobs.<br />Choose the right model for
-            each, then connect them.
-          </p>
-        </div>
-        <div class="role-grid" aria-label="Inspect model roles">
-          <button class="role-card selected" data-role="reasoner" aria-pressed="true">
-            <span class="card-top"
-              ><span>01 / REASONER</span><span class="role-symbol">◎</span></span
-            >
-            <h3>The thinking<br />behind the doing.</h3>
-            <p>
-              Works through the problem, develops a conclusion, or breaks a complex task into a
-              plan.
+      <span class="progress" aria-hidden="true"></span>
+    </header>
+
+    <main id="main">
+      <!-- 00 — THE SPLIT -->
+      <section id="top" class="ch hero" data-ch="0" aria-labelledby="hero-title">
+        <div class="wrap">
+          <div class="hero-copy scrim">
+            <p class="eyebrow" data-decode>
+              <span class="status-dot"></span> Multi-role model orchestration · MIT
             </p>
-            <span class="card-bottom"
-              ><span>STRATEGY & PLANNING</span><span aria-hidden="true">→</span></span
-            >
-          </button>
-          <button class="role-card" data-role="executor" aria-pressed="false">
-            <span class="card-top"
-              ><span>02 / EXECUTOR</span><span class="role-symbol">▥</span></span
-            >
-            <h3>From a plan<br />to an answer.</h3>
-            <p>
-              Takes the handoff, executes planned steps, and brings the results into a cohesive
-              response.
+            <h1 id="hero-title" class="display" aria-label="One prompt. A team of minds.">
+              <span class="line"><span data-decode>One prompt.</span></span>
+              <span class="line"><span data-decode>A team of</span></span>
+              <span class="line"><em class="role-grad" data-decode>minds.</em></span>
+            </h1>
+            <p class="lead" data-reveal>
+              A <b class="c-r">reasoner</b> to think. An <b class="c-e">executor</b> to build. A
+              <b class="c-t">tool caller</b> to act. <strong>Every model in its element.</strong>
             </p>
-            <span class="card-bottom"
-              ><span>EXECUTION & OUTPUT</span><span aria-hidden="true">→</span></span
-            >
-          </button>
-          <button class="role-card" data-role="tool_caller" aria-pressed="false">
-            <span class="card-top"
-              ><span>03 / TOOL CALLER</span><span class="role-symbol">⌘</span></span
-            >
-            <h3>A connection<br />to the outside.</h3>
-            <p>
-              A dedicated model for explicit tool-caller routing in manual mode. Falls back to your
-              executor if omitted.
+            <p class="hero-description" data-reveal>
+              Bring your favorite language models together in one terminal. Give each a role. Let
+              their strengths do the talking.
             </p>
-            <span class="card-bottom"
-              ><span>TOOLS & INTERACTION</span><span aria-hidden="true">→</span></span
-            >
-          </button>
-        </div>
-        <div class="role-detail" aria-live="polite">
-          <span class="detail-marker"></span>
-          <p id="role-description">
-            <strong>Reasoner selected.</strong> In think_then_answer, the executor receives the
-            reasoner’s conclusion as context. In planner_executor, it receives a numbered plan.
-          </p>
-          <a href="./guide/modes.html">Understand the handoff →</a>
-        </div>
-      </section>
-      <section id="playground" class="section playground-section">
-        <div class="section-heading horizontal">
-          <div>
-            <p class="eyebrow">02 / FOLLOW THE SIGNAL</p>
-            <h2>Watch the work<br /><em>change hands.</em></h2>
-          </div>
-          <p class="section-description">
-            Three ways to orchestrate a turn.<br />Switch the mode. Follow the handoff.<br /><span
-              class="simulation-badge"
-              >INTERACTIVE SIMULATION · NO API CALLS</span
-            >
-          </p>
-        </div>
-        <div class="playground">
-          <div class="mode-tabs" role="tablist" aria-label="Interaction mode">
+            <div class="actions" data-reveal>
+              <a class="button" href="#playground" data-magnetic
+                >Explore the orchestration <span aria-hidden="true">↓</span></a
+              ><a class="text-link" href="./guide/"
+                >Read the docs <span aria-hidden="true">→</span></a
+              >
+            </div>
             <button
-              role="tab"
-              id="tab-think"
-              aria-controls="mode-panel"
-              aria-selected="true"
-              data-mode="think_then_answer"
+              class="install-command copy-button"
+              data-copy="npm install -g mrx-ai"
+              aria-label="Copy npm install command"
+              data-reveal
             >
-              Think → answer <span>01</span></button
-            ><button
-              role="tab"
-              id="tab-plan"
-              aria-controls="mode-panel"
-              aria-selected="false"
-              tabindex="-1"
-              data-mode="planner_executor"
-            >
-              Plan → execute <span>02</span></button
-            ><button
-              role="tab"
-              id="tab-manual"
-              aria-controls="mode-panel"
-              aria-selected="false"
-              tabindex="-1"
-              data-mode="manual"
-            >
-              Manual routing <span>03</span>
+              <span><b>$</b> npm install -g mrx-ai</span><span class="copy-label">COPY ⧉</span>
             </button>
+            <div class="hero-meta" data-reveal>
+              <span>OPEN SOURCE / MIT</span><span>LOCAL + CLOUD</span><span>NODE 22.12+</span>
+            </div>
           </div>
-          <div class="playground-body" id="mode-panel" role="tabpanel" aria-labelledby="tab-think">
-            <div class="demo-explainer">
-              <span id="mode-code" class="code-eyebrow">think_then_answer</span>
-              <h3 id="mode-title">Think deeply.<br />Answer clearly.</h3>
-              <p id="mode-description">
-                The reasoner works through the question. Its conclusion becomes context for the
-                executor’s response.
-              </p>
-              <div id="flow" class="flow" aria-label="Routing flow">
-                <span class="flow-node user">PROMPT</span><i>↓</i
-                ><span class="flow-node reasoner">REASONER <small>conclusion</small></span
-                ><i>↓</i
-                ><span class="flow-node executor">EXECUTOR <small>final answer</small></span>
-              </div>
-              <button id="run-demo" class="button" type="button">
-                Run simulation <span aria-hidden="true">▷</span>
-              </button>
-              <p class="demo-footnote">
-                Illustrative output. Your configured models produce the real responses in the CLI.
+        </div>
+        <p class="hero-hint" aria-hidden="true">
+          <span class="fine-only">MOVE TO BEND THE LIGHT · CLICK TO SEND A PROMPT</span
+          ><span class="touch-only">TAP TO SEND A PROMPT</span>
+        </p>
+        <a class="scroll-cue" href="#roles"
+          ><span>SCROLL TO SPLIT THE SIGNAL</span><i aria-hidden="true"></i
+        ></a>
+      </section>
+
+      <div class="principle-strip" aria-label="Your models. Their strengths. One session.">
+        <div class="marquee" aria-hidden="true">
+          <span>YOUR MODELS.</span><i>✳</i><span class="o">THEIR STRENGTHS.</span><i>✳</i
+          ><span class="g">ONE SESSION.</span><i>✳</i><span>YOUR MODELS.</span><i>✳</i
+          ><span class="o">THEIR STRENGTHS.</span><i>✳</i><span class="g">ONE SESSION.</span
+          ><i>✳</i>
+        </div>
+      </div>
+
+      <!-- 01 — THE CAST (pinned scroll story) -->
+      <section id="roles" class="ch roles-section" data-ch="1" aria-labelledby="roles-title">
+        <div class="pin">
+          <div class="wrap roles-wrap">
+            <div class="section-heading scrim">
+              <p class="eyebrow" data-decode>01 / Divide the work</p>
+              <h2 id="roles-title" data-split>One model shouldn’t have to <em>do it all.</em></h2>
+              <p class="section-description" data-reveal>
+                Deep thinking and fast execution are different jobs. Choose the right model for
+                each, then connect them.
               </p>
             </div>
-            <div class="terminal" aria-label="Illustrative terminal output">
-              <div class="terminal-bar">
-                <span class="terminal-dots" aria-hidden="true"><i></i><i></i><i></i></span
-                ><span>mrx — session</span><span class="terminal-state" id="demo-state">READY</span>
-              </div>
-              <div class="terminal-content">
-                <p class="terminal-command">
-                  <span>$</span>
-                  <code id="demo-command">mrx ask "design a REST API for a todo app"</code>
+            <div class="roles-stage" id="roles-stage" aria-hidden="true"></div>
+            <div class="role-grid" aria-label="Inspect model roles">
+              <button class="role-card reasoner selected" data-role="reasoner" aria-pressed="true">
+                <span class="card-top"
+                  ><span>01 / REASONER</span><span class="tag">THINK</span></span
+                >
+                <h3>The thinking behind the doing.</h3>
+                <p>
+                  Works through the problem, develops a conclusion, or breaks a complex task into a
+                  plan.
                 </p>
-                <div id="demo-log" role="log" aria-label="Simulation steps" aria-live="polite">
-                  <p class="terminal-placeholder">
-                    Your prompt is the starting point.<br /><span
-                      >Run the simulation to trace a turn.</span
-                    >
-                  </p>
+                <span class="card-bar"><i></i></span>
+              </button>
+              <button class="role-card executor" data-role="executor" aria-pressed="false">
+                <span class="card-top"
+                  ><span>02 / EXECUTOR</span><span class="tag">BUILD</span></span
+                >
+                <h3>From a plan to an answer.</h3>
+                <p>
+                  Takes the handoff, executes planned steps, and brings the results into a cohesive
+                  response.
+                </p>
+                <span class="card-bar"><i></i></span>
+              </button>
+              <button class="role-card tool" data-role="tool_caller" aria-pressed="false">
+                <span class="card-top"
+                  ><span>03 / TOOL CALLER</span><span class="tag">ACT</span></span
+                >
+                <h3>A connection to the outside.</h3>
+                <p>
+                  A dedicated model for explicit tool-caller routing in manual mode. Falls back to
+                  your executor if omitted.
+                </p>
+                <span class="card-bar"><i></i></span>
+              </button>
+            </div>
+            <div class="role-detail" aria-live="polite">
+              <span class="detail-marker"></span>
+              <p id="role-description">
+                <strong>Reasoner selected.</strong> In think_then_answer, the executor receives the
+                reasoner’s conclusion as context. In planner_executor, it receives a numbered plan.
+              </p>
+              <a href="./guide/modes.html">Understand the handoff →</a>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 02 — THE RELAY -->
+      <section
+        id="playground"
+        class="ch playground-section"
+        data-ch="2"
+        aria-labelledby="play-title"
+      >
+        <div class="wrap">
+          <div class="section-heading relay-heading scrim">
+            <p class="eyebrow" data-decode>02 / Follow the signal</p>
+            <h2 id="play-title" data-split>Watch the work <em>change hands.</em></h2>
+            <p class="section-description" data-reveal>
+              Three ways to orchestrate a turn. Switch the mode. Follow the handoff — the light
+              behind this page follows it too.
+            </p>
+            <span class="simulation-badge" data-reveal>INTERACTIVE SIMULATION · NO API CALLS</span>
+          </div>
+          <div class="playground glass" data-reveal>
+            <div class="mode-tabs" role="tablist" aria-label="Interaction mode">
+              <button
+                role="tab"
+                id="tab-think"
+                aria-controls="mode-panel"
+                aria-selected="true"
+                data-mode="think_then_answer"
+              >
+                Think → answer <span>01</span></button
+              ><button
+                role="tab"
+                id="tab-plan"
+                aria-controls="mode-panel"
+                aria-selected="false"
+                tabindex="-1"
+                data-mode="planner_executor"
+              >
+                Plan → execute <span>02</span></button
+              ><button
+                role="tab"
+                id="tab-manual"
+                aria-controls="mode-panel"
+                aria-selected="false"
+                tabindex="-1"
+                data-mode="manual"
+              >
+                Manual routing <span>03</span>
+              </button>
+            </div>
+            <div
+              class="playground-body"
+              id="mode-panel"
+              role="tabpanel"
+              aria-labelledby="tab-think"
+            >
+              <div class="demo-explainer">
+                <span id="mode-code" class="code-eyebrow">think_then_answer</span>
+                <h3 id="mode-title">Think deeply.<br />Answer clearly.</h3>
+                <p id="mode-description">
+                  The reasoner works through the question. Its conclusion becomes context for the
+                  executor’s response.
+                </p>
+                <div id="flow" class="flow" aria-label="Routing flow">
+                  <span class="flow-node user">PROMPT</span><i>↓</i
+                  ><span class="flow-node reasoner">REASONER <small>conclusion</small></span
+                  ><i>↓</i
+                  ><span class="flow-node executor">EXECUTOR <small>final answer</small></span>
                 </div>
-                <div class="terminal-cursor" aria-hidden="true">▌</div>
+                <button id="run-demo" class="button" type="button">
+                  Run simulation <span aria-hidden="true">▷</span>
+                </button>
+                <p class="demo-footnote">
+                  Illustrative output. Your configured models produce the real responses in the CLI.
+                </p>
               </div>
-              <div class="terminal-footer">
-                <span id="demo-progress">WAITING FOR INPUT</span
-                ><span>ILLUSTRATIVE / LOCAL SIMULATION</span>
+              <div class="terminal" aria-label="Illustrative terminal output">
+                <div class="terminal-bar">
+                  <span class="terminal-dots" aria-hidden="true"><i></i><i></i><i></i></span
+                  ><span>mrx — session</span
+                  ><span class="terminal-state" id="demo-state">READY</span>
+                </div>
+                <div class="terminal-content">
+                  <p class="terminal-command">
+                    <span>$</span>
+                    <code id="demo-command">mrx ask "design a REST API for a todo app"</code>
+                  </p>
+                  <div id="demo-log" role="log" aria-label="Simulation steps" aria-live="polite">
+                    <p class="terminal-placeholder">
+                      Your prompt is the starting point.<br /><span
+                        >Run the simulation to trace a turn.</span
+                      >
+                    </p>
+                  </div>
+                  <div class="terminal-cursor" aria-hidden="true">▌</div>
+                </div>
+                <div class="terminal-footer">
+                  <span id="demo-progress">WAITING FOR INPUT</span
+                  ><span>ILLUSTRATIVE / LOCAL SIMULATION</span>
+                </div>
               </div>
             </div>
           </div>
         </div>
       </section>
-      <section id="providers" class="section providers-section">
-        <div class="section-heading">
-          <p class="eyebrow">03 / BUILT FOR YOUR STACK</p>
-          <h2>Different providers.<br /><em>Same conversation.</em></h2>
-          <p class="section-description">
-            Run with local models, cloud APIs, or a combination.<br />Assign a provider and model to
-            each role in one YAML file.
-          </p>
-        </div>
-        <div class="provider-grid">
-          <div>
-            <span class="provider-icon">O</span>
-            <h3>Ollama</h3>
-            <span class="provider-type local">LOCAL</span>
+
+      <!-- 03 — PROVIDERS -->
+      <section id="providers" class="ch providers-section" data-ch="3" aria-labelledby="prov-title">
+        <div class="wrap">
+          <div class="section-heading scrim">
+            <p class="eyebrow" data-decode>03 / Built for your stack</p>
+            <h2 id="prov-title" data-split>Different providers. <em>Same conversation.</em></h2>
+            <p class="section-description" data-reveal>
+              Run with local models, cloud APIs, or a combination. Assign a provider and model to
+              each role in one YAML file.
+            </p>
           </div>
-          <div>
-            <span class="provider-icon">◈</span>
-            <h3>OpenAI</h3>
-            <span class="provider-type">API</span>
+          <div class="provider-grid" data-reveal>
+            <div>
+              <span class="provider-icon">O</span>
+              <h3>Ollama</h3>
+              <span class="provider-type local">LOCAL</span>
+            </div>
+            <div>
+              <span class="provider-icon">◈</span>
+              <h3>OpenAI</h3>
+              <span class="provider-type">API</span>
+            </div>
+            <div>
+              <span class="provider-icon">A</span>
+              <h3>Anthropic</h3>
+              <span class="provider-type">API</span>
+            </div>
+            <div>
+              <span class="provider-icon">✧</span>
+              <h3>Google Gemini</h3>
+              <span class="provider-type">API</span>
+            </div>
+            <div>
+              <span class="provider-icon">▤</span>
+              <h3>LM Studio</h3>
+              <span class="provider-type local">LOCAL</span>
+            </div>
+            <div>
+              <span class="provider-icon">⇄</span>
+              <h3>OpenRouter</h3>
+              <span class="provider-type">API</span>
+            </div>
           </div>
-          <div>
-            <span class="provider-icon">A</span>
-            <h3>Anthropic</h3>
-            <span class="provider-type">API</span>
+          <div class="provider-note" data-reveal>
+            <span>NO SINGLE-PROVIDER REQUIREMENT.</span
+            ><a class="text-link" href="./guide/providers.html">Provider setup guide →</a>
           </div>
-          <div>
-            <span class="provider-icon">✧</span>
-            <h3>Google Gemini</h3>
-            <span class="provider-type">API</span>
-          </div>
-          <div>
-            <span class="provider-icon">▤</span>
-            <h3>LM Studio</h3>
-            <span class="provider-type local">LOCAL</span>
-          </div>
-          <div>
-            <span class="provider-icon">⇄</span>
-            <h3>OpenRouter</h3>
-            <span class="provider-type">API</span>
-          </div>
-        </div>
-        <div class="provider-note">
-          <span>NO SINGLE-PROVIDER REQUIREMENT.</span
-          ><a class="text-link" href="./guide/providers.html">Provider setup guide →</a>
         </div>
       </section>
-      <section id="configure" class="section configure-section">
-        <div class="configure-copy">
-          <p class="eyebrow">04 / MAKE IT YOURS</p>
-          <h2>Your cast.<br />Your <em>configuration.</em></h2>
-          <p class="section-description">
-            Pair a local reasoner with an API executor. Or keep both local. The role stays the same;
-            the model is your choice.
-          </p>
-          <ul class="config-points">
-            <li>
-              <span>01</span>
-              <div>
-                <h3>Give each model a role</h3>
-                <p>Choose provider, model, temperature, and token limit independently.</p>
-              </div>
-            </li>
-            <li>
-              <span>02</span>
-              <div>
-                <h3>Pick the interaction</h3>
-                <p>Think then answer, plan then execute, or route each message yourself.</p>
-              </div>
-            </li>
-            <li>
-              <span>03</span>
-              <div>
-                <h3>Keep the conversation</h3>
-                <p>Enable SQLite session history and resume a session from your terminal.</p>
-              </div>
-            </li>
-          </ul>
-          <a class="text-link" href="./guide/configuration.html">Explore every config option →</a>
-        </div>
-        <div class="config-code terminal">
-          <div class="terminal-bar">
-            <span>mrx.config.yaml</span><span class="code-eyebrow">LOCAL + API EXAMPLE</span>
+
+      <!-- 04 — CONFIG -->
+      <section id="configure" class="ch configure-section" data-ch="4" aria-labelledby="cfg-title">
+        <div class="wrap configure-grid">
+          <div class="configure-copy scrim">
+            <p class="eyebrow" data-decode>04 / Make it yours</p>
+            <h2 id="cfg-title" data-split>Your cast. Your <em>configuration.</em></h2>
+            <p class="section-description" data-reveal>
+              Pair a local reasoner with an API executor. Or keep both local. The role stays the
+              same; the model is your choice.
+            </p>
+            <ul class="config-points" data-reveal>
+              <li>
+                <span>01</span>
+                <div>
+                  <h3>Give each model a role</h3>
+                  <p>Choose provider, model, temperature, and token limit independently.</p>
+                </div>
+              </li>
+              <li>
+                <span>02</span>
+                <div>
+                  <h3>Pick the interaction</h3>
+                  <p>Think then answer, plan then execute, or route each message yourself.</p>
+                </div>
+              </li>
+              <li>
+                <span>03</span>
+                <div>
+                  <h3>Keep the conversation</h3>
+                  <p>Enable SQLite session history and resume a session from your terminal.</p>
+                </div>
+              </li>
+            </ul>
+            <a class="text-link" href="./guide/configuration.html">Explore every config option →</a>
           </div>
-          <pre><code><span class="syntax-comment"># Different strengths. One session.</span>
+          <div class="config-code terminal glass" data-reveal>
+            <div class="terminal-bar">
+              <span>mrx.config.yaml</span><span class="code-eyebrow">LOCAL + API EXAMPLE</span>
+            </div>
+            <pre><code><span class="syntax-comment"># Different strengths. One session.</span>
 <span class="syntax-key">default_mode:</span> think_then_answer
 <span class="syntax-key">session_memory:</span> true
 
@@ -386,54 +511,79 @@
 <span class="syntax-key">display:</span>
   stream: true
   show_reasoning: false</code></pre>
-          <div class="code-note">
-            Set the executor provider’s API key in your environment.<br />Model names shown are
-            examples, not recommendations.
+            <div class="code-note">
+              Set the executor provider’s API key in your environment. Model names shown are
+              examples, not recommendations.
+            </div>
           </div>
         </div>
       </section>
-      <section id="install" class="section install-section">
-        <p class="eyebrow">05 / BRING YOUR MODELS</p>
-        <h2>Your next session<br />has <em>more possibilities.</em></h2>
-        <p class="section-description">Start with Ollama. Add your own cast when you’re ready.</p>
-        <div class="install-grid">
-          <div class="install-step">
-            <span class="step-number">01</span>
-            <h3>Prepare your local models</h3>
-            <p>
-              Install Node.js 22.12+ and Ollama.<br />With Ollama running, pull the default models:
+
+      <!-- 05 — INSTALL -->
+      <section id="install" class="ch install-section" data-ch="5" aria-labelledby="inst-title">
+        <div class="wrap">
+          <div class="install-head scrim">
+            <p class="eyebrow" data-decode>05 / Bring your models</p>
+            <h2 id="inst-title" data-split>Your next session has <em>more possibilities.</em></h2>
+            <p class="section-description" data-reveal>
+              Start with Ollama. Add your own cast when you’re ready.
             </p>
-            <pre><code>ollama pull qwen3:8b
-ollama pull llama3.1:8b</code></pre>
           </div>
-          <div class="install-step">
-            <span class="step-number">02</span>
-            <h3>Install. Then ask.</h3>
-            <p>No MRX config file needed for the defaults.<br />Both roles start with Ollama.</p>
+          <div class="install-grid" data-reveal>
+            <div class="install-step glass">
+              <span class="step-number">01</span>
+              <h3>Prepare your local models</h3>
+              <p>
+                Install Node.js 22.12+ and Ollama. With Ollama running, pull the default models:
+              </p>
+              <pre><code>ollama pull qwen3:8b
+ollama pull llama3.1:8b</code></pre>
+            </div>
+            <div class="install-step glass">
+              <span class="step-number">02</span>
+              <h3>Install. Then ask.</h3>
+              <p>No MRX config file needed for the defaults. Both roles start with Ollama.</p>
+              <button
+                class="install-command copy-button"
+                data-copy="npm install -g mrx-ai"
+                aria-label="Copy global installation command"
+              >
+                <span><b>$</b> npm install -g mrx-ai</span><span class="copy-label">COPY ⧉</span>
+              </button>
+              <pre><code>mrx ask "explain recursion"
+mrx chat</code></pre>
+            </div>
+          </div>
+          <div class="keybindings" data-reveal>
+            <span><kbd>Enter</kbd> send</span><span><kbd>Ctrl M</kbd> mode</span
+            ><span><kbd>Ctrl R</kbd> reasoning</span><span><kbd>Ctrl C</kbd> quit</span>
+          </div>
+          <div class="actions center" data-reveal>
+            <a class="button" href="./guide/" data-magnetic>Open the getting started guide →</a
+            ><a class="text-link" href="https://www.npmjs.com/package/mrx-ai">View on npm →</a>
+          </div>
+        </div>
+      </section>
+
+      <!-- 06 — FINALE -->
+      <section id="finale" class="ch closing" data-ch="6" aria-labelledby="fin-title">
+        <div class="closing-space" aria-hidden="true"></div>
+        <div class="wrap closing-copy">
+          <p class="eyebrow" data-decode>06 / mrx</p>
+          <h2 id="fin-title" data-split>Let each mind do what it <em>does best.</em></h2>
+          <div class="actions center" data-reveal>
             <button
               class="install-command copy-button"
               data-copy="npm install -g mrx-ai"
-              aria-label="Copy global installation command"
+              aria-label="Copy install command"
             >
               <span><b>$</b> npm install -g mrx-ai</span><span class="copy-label">COPY ⧉</span>
             </button>
-            <pre><code>mrx ask "explain recursion"
-mrx chat</code></pre>
+            <a class="text-link" href="https://github.com/Varun-SV/mrx"
+              >Build with us on GitHub →</a
+            >
           </div>
         </div>
-        <div class="keybindings">
-          <span><kbd>Enter</kbd> send</span><span><kbd>Ctrl M</kbd> mode</span
-          ><span><kbd>Ctrl R</kbd> reasoning</span><span><kbd>Ctrl C</kbd> quit</span>
-        </div>
-        <div class="actions">
-          <a class="button" href="./guide/">Open the getting started guide →</a
-          ><a class="text-link" href="https://www.npmjs.com/package/mrx-ai">View on npm →</a>
-        </div>
-      </section>
-      <section class="closing section">
-        <span class="closing-glyph" aria-hidden="true">mrx<span>.</span></span>
-        <p>Let each mind<br />do what it <em>does best.</em></p>
-        <a class="text-link" href="https://github.com/Varun-SV/mrx">Build with us on GitHub →</a>
       </section>
     </main>
     <footer>

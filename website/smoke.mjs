@@ -47,17 +47,51 @@ try {
   assert.equal(
     await page.getByRole('heading', { name: /A team of minds/ }).count(),
     1,
-    'New orchestration-core hero must exist',
+    'The split hero must exist',
   );
-  console.log('PASS: orchestration-core hero');
+  console.log('PASS: hero');
+  await mkdir('artifacts', { recursive: true });
+  // the particle field renders once WebGL and the vendored three.js addons load
+  await page.waitForFunction(() => document.documentElement.classList.contains('gl-ready'), null, {
+    timeout: 20000,
+  });
+  assert.ok((await page.evaluate(() => window.__mrx.count)) > 1000, 'Particle field is populated');
+  assert.match(await page.locator('#hud-pts').innerText(), /PTS \d/);
+  // skip the cinematic intro so floating labels are placed immediately in slow CI renderers
+  await page.evaluate(() => window.__mrx.intro(true));
+  await page.locator('[data-core-role=executor].on').waitFor({ timeout: 15000 });
   await page.locator('[data-core-role=executor]').click();
   assert.equal(await page.locator('#scene-status').innerText(), 'EXECUTOR / SELECTED');
-  await mkdir('artifacts', { recursive: true });
-  await page.locator('#scene.ready').waitFor();
-  await page.waitForFunction(
-    () => Number(getComputedStyle(document.querySelector('#scene canvas')).opacity) > 0.99,
+  assert.equal(
+    await page.locator('[data-role=executor]').getAttribute('aria-pressed'),
+    'true',
+    'Scene labels and role cards stay in sync',
   );
+  await page.waitForFunction(
+    () => Number(getComputedStyle(document.querySelector('#gl')).opacity) > 0.99,
+  );
+  await page.waitForTimeout(800);
   await page.screenshot({ path: 'artifacts/hero.png' });
+  console.log('PASS: WebGL particle stage, labels and role sync');
+  // scrolling drives the chapters: HUD, rail and the pinned roles story
+  await page.evaluate(() => {
+    const roles = document.querySelector('#roles');
+    const top = roles.getBoundingClientRect().top + scrollY;
+    window.scrollTo({ top: top + (roles.offsetHeight - innerHeight) * 0.5, behavior: 'instant' });
+  });
+  await page.waitForFunction(() => document.querySelector('#hud-name').textContent === 'THE CAST');
+  await page.waitForFunction(
+    () => document.querySelector('[data-role=executor]').getAttribute('aria-pressed') === 'true',
+  );
+  await page.waitForTimeout(600);
+  await page.screenshot({ path: 'artifacts/roles.png' });
+  await page.locator('#providers').scrollIntoViewIfNeeded();
+  await page.evaluate(() =>
+    window.scrollTo({ top: document.querySelector('#providers').offsetTop, behavior: 'instant' }),
+  );
+  await page.waitForFunction(() => document.querySelector('#hud-name').textContent === 'PROVIDERS');
+  assert.equal(await page.locator('[data-rail="3"]').getAttribute('class'), 'on');
+  console.log('PASS: scroll chapters, HUD, rail and pinned roles story');
   await page.getByRole('button', { name: 'Run simulation' }).click();
   await page.getByText('COMPLETE', { exact: true }).waitFor({ timeout: 8000 });
   assert.match(await page.locator('#demo-log').innerText(), /GET \/todos/);
@@ -154,7 +188,7 @@ try {
       }
       await page.evaluate(() => window.scrollTo({ top: 0, behavior: 'instant' }));
       await page.waitForFunction(
-        () => Number(getComputedStyle(document.querySelector('#scene canvas')).opacity) > 0.99,
+        () => Number(getComputedStyle(document.querySelector('#gl')).opacity) > 0.99,
       );
       await page.waitForTimeout(900);
       await page.screenshot({ path: 'artifacts/mobile.png', fullPage: true });
