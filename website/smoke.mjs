@@ -29,6 +29,12 @@ const server = createServer(async (req, res) => {
   }
 });
 await new Promise((r) => server.listen(0, '127.0.0.1', r));
+// Infinite CSS animations still playing, named by animation and element class.
+const runningLoops = () =>
+  document
+    .getAnimations()
+    .filter((a) => a.effect?.getTiming().iterations === Infinity && a.playState === 'running')
+    .map((a) => `${a.animationName} @ ${a.effect.target?.className || a.effect.target?.tagName}`);
 const browser = await chromium.launch({
   executablePath: process.env.CHROMIUM_PATH || undefined,
   args: [
@@ -129,6 +135,11 @@ try {
     await page.getByRole('button', { name: 'Resume motion' }).getAttribute('aria-pressed'),
     'true',
   );
+  assert.deepEqual(
+    await page.evaluate(runningLoops),
+    [],
+    'Pause motion stops every looping decorative animation',
+  );
   await page.getByRole('button', { name: 'Run simulation' }).click();
   await page.getByText('COMPLETE', { exact: true }).waitFor();
   assert.ok(
@@ -202,6 +213,11 @@ try {
   });
   await reducedPage.goto(`http://127.0.0.1:${server.address().port}/mrx/`);
   await reducedPage.getByRole('button', { name: 'Resume motion' }).waitFor();
+  assert.deepEqual(
+    await reducedPage.evaluate(runningLoops),
+    [],
+    'Reduced motion leaves no looping decorative animation running',
+  );
   await reducedPage.getByRole('button', { name: 'Run simulation' }).click();
   assert.equal(await reducedPage.locator('#demo-state').innerText(), 'COMPLETE');
   await reducedPage.screenshot({ path: 'artifacts/reduced-motion.png' });

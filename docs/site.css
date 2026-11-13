@@ -1834,11 +1834,16 @@ footer nav {
   html {
     scroll-behavior: auto;
   }
+  /* every looping decorative animation; keep in sync with the paused list below */
   .grain::before,
   .marquee,
   h2 em,
   .display em,
-  .scroll-cue i {
+  .scroll-cue i,
+  .hud-dot,
+  .status-dot,
+  .terminal-cursor,
+  .boot .cur {
     animation: none;
   }
   .js [data-reveal],
@@ -1851,7 +1856,12 @@ footer nav {
 .motion-paused .grain::before,
 .motion-paused .marquee,
 .motion-paused h2 em,
-.motion-paused .display em {
+.motion-paused .display em,
+.motion-paused .scroll-cue i,
+.motion-paused .hud-dot,
+.motion-paused .status-dot,
+.motion-paused .terminal-cursor,
+.motion-paused .boot .cur {
   animation-play-state: paused;
 }
 
